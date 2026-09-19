@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 672" width="1024" height="672">
+  <rect width="1024" height="672" fill="#000000"/>
+
+  <!-- Title -->
+  <text x="512" y="52" font-family="Georgia,serif" font-size="34" font-weight="bold" fill="#4ade80" text-anchor="middle">Three Ways to Walk Through Every Node</text>
+  <text x="512" y="82" font-family="Arial,sans-serif" font-size="15" fill="#6b8c6b" text-anchor="middle">Same tree, same nodes — the visit order changes what the output is useful for</text>
+
+  <!-- Card 1: In-order -->
+  <rect x="38" y="115" width="294" height="400" rx="14" fill="#0d2018" stroke="#2a6a40" stroke-width="2"/>
+  <text x="185" y="162" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#4ade80" text-anchor="middle">In-order</text>
+  <text x="185" y="192" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">left → node → right</text>
+  <line x1="70" y1="208" x2="300" y2="208" stroke="#2a6a40" stroke-width="1"/>
+  <text x="185" y="248" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">Visits nodes in</text>
+  <text x="185" y="270" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">sorted order</text>
+  <line x1="100" y1="295" x2="270" y2="295" stroke="#1a4a28" stroke-width="1"/>
+  <text x="185" y="335" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">→ get sorted data</text>
+  <text x="185" y="358" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">with one walk</text>
+
+  <!-- Card 2: Pre-order -->
+  <rect x="363" y="115" width="294" height="400" rx="14" fill="#0d2018" stroke="#2a6a40" stroke-width="2"/>
+  <text x="510" y="162" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#4ade80" text-anchor="middle">Pre-order</text>
+  <text x="510" y="192" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">node → left → right</text>
+  <line x1="395" y1="208" x2="625" y2="208" stroke="#2a6a40" stroke-width="1"/>
+  <text x="510" y="248" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">Visits root before</text>
+  <text x="510" y="270" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">its children</text>
+  <line x1="425" y1="295" x2="595" y2="295" stroke="#1a4a28" stroke-width="1"/>
+  <text x="510" y="335" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">→ copy or rebuild</text>
+  <text x="510" y="358" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">the same tree</text>
+
+  <!-- Card 3: Post-order -->
+  <rect x="688" y="115" width="294" height="400" rx="14" fill="#0d2018" stroke="#2a6a40" stroke-width="2"/>
+  <text x="835" y="162" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#4ade80" text-anchor="middle">Post-order</text>
+  <text x="835" y="192" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">left → right → node</text>
+  <line x1="720" y1="208" x2="950" y2="208" stroke="#2a6a40" stroke-width="1"/>
+  <text x="835" y="248" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">Visits root last,</text>
+  <text x="835" y="270" font-family="Arial,sans-serif" font-size="14" fill="#c8d8c8" text-anchor="middle">after both children</text>
+  <line x1="750" y1="295" x2="920" y2="295" stroke="#1a4a28" stroke-width="1"/>
+  <text x="835" y="335" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">→ safely delete</text>
+  <text x="835" y="358" font-family="Arial,sans-serif" font-size="13" font-style="italic" fill="#4ade80" text-anchor="middle">a whole tree</text>
+
+  <!-- Footer -->
+  <text x="512" y="574" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#4ade80" text-anchor="middle">The name tells you when the root is visited: Pre = before, In = middle, Post = after</text>
+</svg>

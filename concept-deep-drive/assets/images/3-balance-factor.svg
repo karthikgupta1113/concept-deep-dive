@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 672" width="1024" height="672">
+  <rect width="1024" height="672" fill="#000000"/>
+
+  <!-- Title -->
+  <text x="512" y="52" font-family="Georgia,serif" font-size="36" font-weight="bold" fill="#4ade80" text-anchor="middle">Balance Factor</text>
+  <text x="512" y="82" font-family="Arial,sans-serif" font-size="15" fill="#6b8c6b" text-anchor="middle">Measuring lopsidedness — (left height) − (right height)</text>
+
+  <!-- Divider -->
+  <line x1="512" y1="110" x2="512" y2="530" stroke="#1e3a2a" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- ── LEFT: Healthy tree ── -->
+  <text x="256" y="148" font-family="Arial,sans-serif" font-size="18" fill="#4ade80" text-anchor="middle">Healthy</text>
+
+  <!-- Edges left tree -->
+  <line x1="256" y1="190" x2="156" y2="310" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="256" y1="190" x2="356" y2="310" stroke="#2a6a40" stroke-width="2.5"/>
+
+  <!-- Node A (root left) -->
+  <circle cx="256" cy="190" r="44" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="256" y="198" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">A</text>
+
+  <!-- Node B (left child) -->
+  <circle cx="156" cy="310" r="40" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="156" y="318" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">B</text>
+
+  <!-- Node C (right child) -->
+  <circle cx="356" cy="310" r="40" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="356" y="318" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">C</text>
+
+  <!-- Left tree annotation -->
+  <text x="256" y="398" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">left height 1 − right height 1</text>
+  <text x="256" y="430" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#4ade80" text-anchor="middle">balance = 0 ✓</text>
+
+  <!-- ── RIGHT: Unhealthy tree ── -->
+  <text x="768" y="148" font-family="Arial,sans-serif" font-size="18" fill="#c87030" text-anchor="middle">Unhealthy</text>
+
+  <!-- Edges right tree -->
+  <line x1="768" y1="190" x2="718" y2="295" stroke="#8a3a10" stroke-width="2.5"/>
+
+  <!-- Node A (root right) -->
+  <circle cx="768" cy="190" r="44" fill="#1e1208" stroke="#c87030" stroke-width="3"/>
+  <text x="768" y="198" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">A</text>
+
+  <!-- Edge B→C right tree -->
+  <line x1="718" y1="295" x2="718" y2="390" stroke="#8a3a10" stroke-width="2.5"/>
+
+  <!-- Node B (child of A) -->
+  <circle cx="718" cy="295" r="40" fill="#1e1208" stroke="#c87030" stroke-width="3"/>
+  <text x="718" y="303" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">B</text>
+
+  <!-- Node C (child of B) -->
+  <circle cx="718" cy="392" r="40" fill="#1e1208" stroke="#c87030" stroke-width="3"/>
+  <text x="718" y="400" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">C</text>
+
+  <!-- Right tree annotation -->
+  <text x="768" y="468" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">left height 2 − right height 0</text>
+  <text x="768" y="500" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#c87030" text-anchor="middle">balance = 2 ✗</text>
+
+  <!-- Footer lines -->
+  <text x="512" y="574" font-family="Arial,sans-serif" font-size="14" fill="#8a9a8a" text-anchor="middle">Balance factor of −1, 0, or +1 is healthy — beyond that, one side is doing too much work</text>
+  <text x="512" y="610" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#4ade80" text-anchor="middle">AVL trees auto-rotate whenever this drifts too far from zero</text>
+</svg>

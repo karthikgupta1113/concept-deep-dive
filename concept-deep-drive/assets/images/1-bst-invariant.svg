@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 672" width="1024" height="672">
+  <rect width="1024" height="672" fill="#000000"/>
+
+  <!-- Shaded "smaller" region (left polygon) -->
+  <polygon points="100,95 490,95 375,530 100,530" fill="#1a3d28" opacity="0.30"/>
+  <!-- Shaded "bigger" region (right polygon) -->
+  <polygon points="534,95 920,95 920,530 648,530" fill="#3d2510" opacity="0.25"/>
+
+  <!-- Region labels -->
+  <text x="215" y="240" font-family="Georgia,serif" font-style="italic" font-size="20" fill="#3a7a50">smaller</text>
+  <text x="798" y="240" font-family="Georgia,serif" font-style="italic" font-size="20" fill="#7a5028">bigger</text>
+
+  <!-- Title -->
+  <text x="512" y="52" font-family="Georgia,serif" font-size="36" font-weight="bold" fill="#4ade80" text-anchor="middle">The BST Invariant</text>
+  <text x="512" y="82" font-family="Arial,sans-serif" font-size="15" fill="#6b8c6b" text-anchor="middle">left &lt; node &lt; right — at every node, recursively</text>
+
+  <!-- Edges -->
+  <line x1="512" y1="130" x2="310" y2="295" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="512" y1="130" x2="714" y2="295" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="310" y1="295" x2="200" y2="455" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="310" y1="295" x2="424" y2="455" stroke="#2a6a40" stroke-width="2.5"/>
+
+  <!-- Root node 50 — 1st insertion -->
+  <circle cx="512" cy="130" r="52" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="512" y="138" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">50</text>
+  <rect x="528" y="72" width="36" height="22" rx="11" fill="#c87030"/>
+  <text x="546" y="87" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">1st</text>
+
+  <!-- Node 30 — 2nd insertion -->
+  <circle cx="310" cy="295" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="310" y="303" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">30</text>
+  <rect x="295" y="248" width="36" height="22" rx="11" fill="#c87030"/>
+  <text x="313" y="263" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">2nd</text>
+
+  <!-- Node 70 — 3rd insertion -->
+  <circle cx="714" cy="295" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="714" y="303" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">70</text>
+  <rect x="696" y="248" width="36" height="22" rx="11" fill="#c87030"/>
+  <text x="714" y="263" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">3rd</text>
+
+  <!-- Node 20 — 4th insertion -->
+  <circle cx="200" cy="455" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="200" y="463" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">20</text>
+  <rect x="160" y="408" width="36" height="22" rx="11" fill="#c87030"/>
+  <text x="178" y="423" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">4th</text>
+
+  <!-- Node 40 — 5th insertion -->
+  <circle cx="424" cy="455" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="424" y="463" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">40</text>
+  <rect x="418" y="408" width="36" height="22" rx="11" fill="#c87030"/>
+  <text x="436" y="423" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">5th</text>
+
+  <!-- Body text -->
+  <text x="512" y="556" font-family="Arial,sans-serif" font-size="15" fill="#8a9a8a" text-anchor="middle">Insert order: 50, 30, 70, 20, 40</text>
+  <text x="512" y="580" font-family="Arial,sans-serif" font-size="15" fill="#8a9a8a" text-anchor="middle">Every placement obeys: left-smaller, right-bigger — at every node</text>
+
+  <!-- Key insight -->
+  <text x="512" y="622" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#4ade80" text-anchor="middle">One comparison per node → search space halves each step → O(log n)</text>
+</svg>

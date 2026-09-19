@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 672" width="1024" height="672">
+  <rect width="1024" height="672" fill="#000000"/>
+
+  <!-- Title -->
+  <text x="512" y="52" font-family="Georgia,serif" font-size="36" font-weight="bold" fill="#4ade80" text-anchor="middle">In-order Traversal</text>
+  <text x="512" y="82" font-family="Arial,sans-serif" font-size="15" fill="#6b8c6b" text-anchor="middle">left → node → right</text>
+
+  <!-- Edges -->
+  <line x1="512" y1="130" x2="310" y2="295" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="512" y1="130" x2="714" y2="295" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="310" y1="295" x2="200" y2="455" stroke="#2a6a40" stroke-width="2.5"/>
+  <line x1="310" y1="295" x2="424" y2="455" stroke="#2a6a40" stroke-width="2.5"/>
+
+  <!-- Node 50 (visit order 4) -->
+  <circle cx="512" cy="130" r="52" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="512" y="138" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">50</text>
+  <circle cx="468" cy="88" r="16" fill="#c87030"/>
+  <text x="468" y="93" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">4</text>
+
+  <!-- Node 30 (visit order 2) -->
+  <circle cx="310" cy="295" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="310" y="303" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">30</text>
+  <circle cx="272" cy="258" r="16" fill="#c87030"/>
+  <text x="272" y="263" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">2</text>
+
+  <!-- Node 70 (visit order 5) -->
+  <circle cx="714" cy="295" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="714" y="303" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">70</text>
+  <circle cx="753" cy="258" r="16" fill="#c87030"/>
+  <text x="753" y="263" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">5</text>
+
+  <!-- Node 20 (visit order 1) -->
+  <circle cx="200" cy="455" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="200" y="463" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">20</text>
+  <circle cx="162" cy="418" r="16" fill="#c87030"/>
+  <text x="162" y="423" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">1</text>
+
+  <!-- Node 40 (visit order 3) -->
+  <circle cx="424" cy="455" r="46" fill="#162c1e" stroke="#3ecf6f" stroke-width="3"/>
+  <text x="424" y="463" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">40</text>
+  <circle cx="462" cy="418" r="16" fill="#c87030"/>
+  <text x="462" y="423" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">3</text>
+
+  <!-- Visit order -->
+  <text x="512" y="560" font-family="Arial,sans-serif" font-size="16" fill="#8a9a8a" text-anchor="middle">Visit order: 20 → 30 → 40 → 50 → 70</text>
+
+  <!-- Key insight -->
+  <text x="512" y="610" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#4ade80" text-anchor="middle">Output is always ascending sorted order — no separate sort needed</text>
+</svg>
