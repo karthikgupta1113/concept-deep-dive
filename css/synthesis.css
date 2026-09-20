@@ -619,3 +619,45 @@
   .synth-section-header { flex-direction: column; gap: var(--sp-4); }
   .synth-coming-badge { flex-direction: column; gap: var(--sp-3); }
 }
+
+/* ── Animations "Mark as viewed" button ──────────────────────*/
+.synth-section--animations .synth-section-header {
+  align-items: center; /* vertically centre the button with the icon+text block */
+}
+
+.anim-watched-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--cream-3);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4);
+  white-space: nowrap;
+  transition: color var(--dur-sm), border-color var(--dur-sm), background var(--dur-sm);
+}
+.anim-watched-btn:hover {
+  color: var(--glow);
+  border-color: var(--glow-border);
+  background: var(--glow-soft);
+}
+
+/* Done / pressed state */
+.anim-watched-btn--done,
+.anim-watched-btn[aria-pressed="true"] {
+  color: var(--glow);
+  border-color: var(--glow-border);
+  background: var(--glow-soft);
+}
+.anim-watched-btn--done .anim-watched-icon,
+.anim-watched-btn[aria-pressed="true"] .anim-watched-icon {
+  stroke: var(--leaf);
+}
+
+@media (max-width: 600px) {
+  .anim-watched-btn { margin-left: 0; width: 100%; justify-content: center; }
+}

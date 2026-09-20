@@ -27,6 +27,14 @@
       container.dataset.boundEvents = 'true';
 
       container.addEventListener('click', async (e) => {
+        const btnKey = e.target.closest('#btn-open-key-settings');
+        if (btnKey) {
+          if (window.Dashboard?.openKeySettings) {
+            window.Dashboard.openKeySettings();
+          }
+          return;
+        }
+
         const btnGen = e.target.closest('#btn-generate-summary');
         const btnRegen = e.target.closest('#btn-regenerate-summary');
 
@@ -169,9 +177,7 @@
     },
 
     renderUnlockedState(apiKey) {
-      const apiBadgeText = apiKey
-        ? `<span class="synth-api-badge synth-api-badge--active">⚡ Gemini 3.5 Flash Lite Connected</span>`
-        : `<span class="synth-api-badge">🤖 Built-in Socratic AI Evaluator</span>`;
+      const apiBadgeText = `<span class="synth-api-badge synth-api-badge--active">⚡ Gemini 3.5 Flash Lite Connected</span>`;
 
       return `
         <div class="synth-cta-card">
@@ -251,9 +257,7 @@
         ? new Date(summary.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : 'Just now';
 
-      const apiBadgeText = apiKey
-        ? `<span class="synth-api-badge synth-api-badge--active">⚡ Generated with Gemini AI</span>`
-        : `<span class="synth-api-badge">🤖 Generated with Socratic Engine</span>`;
+      const apiBadgeText = `<span class="synth-api-badge synth-api-badge--active">⚡ Generated with Gemini AI</span>`;
 
       const formattedHTML = this.parseSummaryMarkdown(summary.text);
 
@@ -379,5 +383,40 @@
   };
 
   window.Synthesis = Synthesis;
+
+  /* ── Animations "Mark as viewed" toggle ─────────────────── */
+  (function initAnimWatchedBtn() {
+    const btn = document.getElementById('btn-mark-animations-watched');
+    if (!btn) return;
+
+    function syncBtn(watched) {
+      btn.setAttribute('aria-pressed', String(watched));
+      const label = btn.querySelector('.anim-watched-label');
+      if (watched) {
+        btn.classList.add('anim-watched-btn--done');
+        if (label) label.textContent = 'Animations viewed ✓';
+      } else {
+        btn.classList.remove('anim-watched-btn--done');
+        if (label) label.textContent = 'Mark as viewed';
+      }
+    }
+
+    // Restore persisted state on synthesis page open
+    function refreshBtn() {
+      syncBtn(State.get().animationsWatched);
+    }
+
+    btn.addEventListener('click', () => {
+      const current = State.get().animationsWatched;
+      State.setAnimationsWatched(!current);
+      syncBtn(!current);
+      // Refresh dashboard stats if it's rendered (so ring/% update immediately)
+      if (window.Dashboard) window.Dashboard.initFromState();
+    });
+
+    // Wire into State subscription so button reflects state on every render
+    State.subscribe(refreshBtn);
+    refreshBtn();
+  })();
 
 })();

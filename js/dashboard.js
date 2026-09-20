@@ -33,6 +33,7 @@
       t.addEventListener('animationend', () => t.remove(), { once: true });
     }, 3400);
   }
+  window.showToast = showToast;
 
   /* ── Particle burst ─────────────────────────────────────── */
   function burst(el) {
@@ -75,11 +76,11 @@
   const elSidebarProgress = document.getElementById('sidebar-progress');
 
   function updateStats(count) {
-    const masteredCount = State.masteredCount();
+    const stagePct = Math.round((count / 4) * 100);
     if (elCompleted) elCompleted.textContent = count;
-    if (elPercent)   elPercent.textContent   = `${Math.round((masteredCount / 4) * 100)}%`;
+    if (elPercent)   elPercent.textContent   = `${stagePct}%`;
     if (elSidebarProgress) elSidebarProgress.textContent = `${count} of 4 stages`;
-    setRing((count / 4) * 100);
+    setRing(stagePct);
   }
 
   /* ── Apply card status to DOM ───────────────────────────── */
@@ -449,11 +450,6 @@
   const chatInputText = document.getElementById('chat-input-text');
   const stageSelect = document.getElementById('tutor-stage-select');
 
-  const btnToggleKey = document.getElementById('btn-toggle-key-settings');
-  const keyPanel = document.getElementById('key-settings-panel');
-  const keyInput = document.getElementById('gemini-api-key-input');
-  const btnSaveKey = document.getElementById('btn-save-api-key');
-
   const floatingToggle = document.getElementById('tutor-floating-toggle');
 
   function openChat(stageId) {
@@ -521,28 +517,7 @@
     });
   }
 
-  // Toggle API key configuration dropdown
-  if (btnToggleKey && keyPanel) {
-    btnToggleKey.addEventListener('click', () => {
-      keyPanel.classList.toggle('key-settings-panel--hidden');
-      btnToggleKey.classList.toggle('header-key-btn--active');
-      if (!keyPanel.classList.contains('key-settings-panel--hidden') && keyInput) {
-        keyInput.value = window.TutorChatService.getApiKey();
-        keyInput.focus();
-      }
-    });
-  }
 
-  // Save API key
-  if (btnSaveKey && keyInput) {
-    btnSaveKey.addEventListener('click', () => {
-      const val = keyInput.value.trim();
-      window.TutorChatService.saveApiKey(val);
-      showToast(val ? "API Key saved." : "API Key cleared.");
-      keyPanel.classList.add('key-settings-panel--hidden');
-      btnToggleKey.classList.remove('header-key-btn--active');
-    });
-  }
 
   // Render stage message history
   function renderChatHistory() {
@@ -699,7 +674,11 @@
     });
   }
 
+  function openKeySettings() {
+    openChat();
+  }
+
   State.subscribe(initFromState);
-  window.Dashboard = { initFromState };
+  window.Dashboard = { initFromState, openChat, openKeySettings };
 
 })();

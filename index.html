@@ -18,10 +18,18 @@
 </head>
 <body data-view="auth">
 
+  <!-- Initial App Boot Loader (eliminates flash of login screen) -->
+  <div id="app-loader" class="app-loader" aria-label="Loading application">
+    <div class="app-loader-content">
+      <div class="app-loader-spinner"></div>
+      <span class="app-loader-text">Loading Concept Deep‑Dive...</span>
+    </div>
+  </div>
+
   <!-- ════════════════════════════════════════════════════════
        AUTH VIEW
   ═════════════════════════════════════════════════════════ -->
-  <div id="view-auth" class="view view--auth" aria-label="Authentication">
+  <div id="view-auth" class="view view--auth" aria-label="Authentication" hidden>
     <div class="auth-canvas">
       <div class="auth-tree-bg" aria-hidden="true">
         <canvas id="tree-canvas"></canvas>
@@ -45,7 +53,14 @@
         <h1 class="auth-headline">One topic.<br/>Full depth.</h1>
         <p class="auth-tagline">No shortcuts. No skimming. One idea at a time — from first principles to research papers.</p>
 
-        <div class="auth-tabs" role="tablist">
+        <!-- Global Auth Alert Banner (for expired links or success notices) -->
+        <div id="auth-alert-banner" class="auth-alert-banner auth-alert-banner--hidden" role="alert">
+          <span class="auth-alert-icon" id="auth-alert-icon" aria-hidden="true"></span>
+          <div class="auth-alert-content" id="auth-alert-content"></div>
+          <button type="button" class="auth-alert-close" id="auth-alert-close" aria-label="Dismiss">✕</button>
+        </div>
+
+        <div class="auth-tabs" id="auth-tabs" role="tablist">
           <button class="auth-tab auth-tab--active" role="tab" aria-selected="true" aria-controls="panel-login" id="tab-login" data-tab="login">Sign In</button>
           <button class="auth-tab" role="tab" aria-selected="false" aria-controls="panel-signup" id="tab-signup" data-tab="signup">Create Account</button>
         </div>
@@ -64,7 +79,11 @@
               <span class="field-error" id="login-password-error" role="alert"></span>
             </div>
             <div class="auth-form-footer">
-              <a href="#" class="auth-link">Forgot password?</a>
+              <button type="button" class="auth-link-btn auth-link-forgot" id="link-forgot-password">Forgot password?</button>
+            </div>
+            <div id="login-unconfirmed-notice" class="auth-notice auth-notice--unconfirmed" hidden>
+              <span id="login-unconfirmed-text">Email not confirmed.</span>
+              <button type="button" class="auth-link-btn" id="btn-login-resend-link">Resend confirmation link</button>
             </div>
             <button type="submit" class="btn btn--primary btn--full" id="btn-login">
               <span class="btn-label">Continue →</span>
@@ -92,15 +111,161 @@
               <input class="field-input" type="password" id="signup-password" name="password" autocomplete="new-password" placeholder="min. 8 characters" required minlength="8"/>
               <span class="field-error" id="signup-password-error" role="alert"></span>
             </div>
-            <button type="submit" class="btn btn--primary btn--full" id="btn-signup">
+            <div class="field-group consent-group">
+              <label class="consent-label" for="signup-consent">
+                <input
+                  type="checkbox"
+                  id="signup-consent"
+                  name="consent"
+                  class="consent-checkbox"
+                  required
+                  aria-describedby="signup-consent-error"
+                />
+                <span class="consent-text">
+                  I have read and agree to the
+                  <a href="privacy.html" target="_blank" rel="noopener" class="consent-policy-link">Privacy Policy</a>
+                </span>
+              </label>
+              <span class="field-error" id="signup-consent-error" role="alert"></span>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full" id="btn-signup" disabled aria-disabled="true">
               <span class="btn-label">Begin the deep-dive →</span>
               <span class="btn-loading" aria-hidden="true"></span>
             </button>
             <p class="auth-switch">Already learning? <button type="button" class="auth-link-btn" data-switch="login">Sign in</button></p>
           </form>
         </div>
+
+        <!-- EMAIL VERIFICATION PANEL (Magic Link) -->
+        <div class="auth-form-panel auth-form-panel--hidden" id="panel-verify-email" role="region" aria-label="Verify Email">
+          <div class="auth-flow-card">
+            <div class="auth-card-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="4" width="20" height="16" rx="3"/>
+                <path d="M22 6L12 13L2 6"/>
+              </svg>
+            </div>
+            <h2 class="auth-card-title">Check your email</h2>
+            <p class="auth-card-desc">
+              We've sent a confirmation link to <strong id="verify-email-target" class="auth-highlight-text">your email</strong>. Click it to activate your account.
+            </p>
+            <div class="auth-card-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <span>Can't find it? Check your spam or promotions folder.</span>
+            </div>
+            <div class="auth-flow-actions">
+              <button type="button" class="btn btn--outline btn--full" id="btn-resend-verify">
+                <span class="btn-label" id="btn-resend-verify-label">Resend email</span>
+                <span class="btn-loading" aria-hidden="true"></span>
+              </button>
+              <div id="verify-resend-status" class="auth-resend-status" role="status" aria-live="polite"></div>
+            </div>
+            <div class="auth-flow-back">
+              <button type="button" class="auth-link-btn auth-back-btn" data-switch="login">← Back to Sign In</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORGOT PASSWORD PANEL (Request Link) -->
+        <div class="auth-form-panel auth-form-panel--hidden" id="panel-forgot-password" role="region" aria-label="Reset Password">
+          <div class="auth-flow-card">
+            <div class="auth-card-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h2 class="auth-card-title">Reset your password</h2>
+            <p class="auth-card-desc">Enter your account email and we'll send you a password reset link.</p>
+            <form id="form-forgot-password" class="auth-form" novalidate>
+              <div class="field-group">
+                <label class="field-label" for="forgot-email">Email address</label>
+                <input class="field-input" type="email" id="forgot-email" name="email" autocomplete="email" placeholder="you@university.edu" required />
+                <span class="field-error" id="forgot-email-error" role="alert"></span>
+              </div>
+              <button type="submit" class="btn btn--primary btn--full" id="btn-forgot-submit">
+                <span class="btn-label">Send reset link →</span>
+                <span class="btn-loading" aria-hidden="true"></span>
+              </button>
+            </form>
+            <div class="auth-flow-back">
+              <button type="button" class="auth-link-btn auth-back-btn" data-switch="login">← Back to Sign In</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESET SENT CONFIRMATION PANEL -->
+        <div class="auth-form-panel auth-form-panel--hidden" id="panel-reset-sent" role="region" aria-label="Reset Link Sent">
+          <div class="auth-flow-card">
+            <div class="auth-card-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h9"/>
+                <path d="M22 6l-10 7L2 6"/>
+                <circle cx="18" cy="18" r="3"/>
+                <path d="M18 16.5v1.5l1 1"/>
+              </svg>
+            </div>
+            <h2 class="auth-card-title">Check your email</h2>
+            <p class="auth-card-desc">
+              We've sent a password reset link to <strong id="reset-email-target" class="auth-highlight-text">your email</strong>. Click it to create a new password.
+            </p>
+            <div class="auth-card-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <span>The link will expire in 1 hour. Check your spam folder if it doesn't appear.</span>
+            </div>
+            <div class="auth-flow-actions">
+              <button type="button" class="btn btn--outline btn--full" id="btn-resend-reset">
+                <span class="btn-label" id="btn-resend-reset-label">Resend reset link</span>
+                <span class="btn-loading" aria-hidden="true"></span>
+              </button>
+              <div id="reset-resend-status" class="auth-resend-status" role="status" aria-live="polite"></div>
+            </div>
+            <div class="auth-flow-back">
+              <button type="button" class="auth-link-btn auth-back-btn" data-switch="login">← Back to Sign In</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CREATE NEW PASSWORD PANEL -->
+        <div class="auth-form-panel auth-form-panel--hidden" id="panel-new-password" role="region" aria-label="Create New Password">
+          <div class="auth-flow-card">
+            <div class="auth-card-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 2l-2 2m-1.5 6.1L19 12l2-2-1.5-1.5L21 7l-2-2-1.5 1.5L16 5l-1.9 1.9"/>
+                <circle cx="7.5" cy="15.5" r="5.5"/>
+              </svg>
+            </div>
+            <h2 class="auth-card-title">Create new password</h2>
+            <p class="auth-card-desc">Enter your new password below. Make sure it is at least 8 characters.</p>
+            <form id="form-new-password" class="auth-form" novalidate>
+              <div class="field-group">
+                <label class="field-label" for="new-password">New password</label>
+                <input class="field-input" type="password" id="new-password" name="password" autocomplete="new-password" placeholder="min. 8 characters" required minlength="8" />
+                <span class="field-error" id="new-password-error" role="alert"></span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="confirm-new-password">Confirm new password</label>
+                <input class="field-input" type="password" id="confirm-new-password" name="confirm_password" autocomplete="new-password" placeholder="re-enter new password" required minlength="8" />
+                <span class="field-error" id="confirm-new-password-error" role="alert"></span>
+              </div>
+              <button type="submit" class="btn btn--primary btn--full" id="btn-new-password-submit">
+                <span class="btn-label">Reset Password →</span>
+                <span class="btn-loading" aria-hidden="true"></span>
+              </button>
+            </form>
+            <div class="auth-flow-back">
+              <button type="button" class="auth-link-btn auth-back-btn" data-switch="login">← Back to Sign In</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Auth page footer -->
+    <footer class="auth-footer" aria-label="Site footer">
+      <span class="auth-footer-copy">© 2026 Concept Deep-Dive</span>
+      <a href="privacy.html" class="auth-footer-link" target="_blank" rel="noopener">Privacy Policy</a>
+    </footer>
   </div>
 
   <!-- ════════════════════════════════════════════════════════
@@ -160,7 +325,6 @@
           <div class="user-avatar" aria-hidden="true" id="user-avatar-initials">AL</div>
           <div class="user-info">
             <span class="user-name" id="sidebar-user-name">Ada Lovelace</span>
-            <span class="user-streak" id="user-streak-label">Day 1 streak 🔥</span>
           </div>
         </div>
         <button class="btn-icon" id="btn-logout" aria-label="Sign out" title="Sign out">
@@ -196,11 +360,6 @@
               <span class="stat-value" id="stat-completed">0</span>
               <span class="stat-unit">/ 4</span>
               <span class="stat-label">stages complete</span>
-            </div>
-            <div class="stat-divider" aria-hidden="true"></div>
-            <div class="stat">
-              <span class="stat-value" id="stat-percent">0%</span>
-              <span class="stat-label">mastered</span>
             </div>
             <div class="stat-divider" aria-hidden="true"></div>
             <div class="stat">
@@ -1259,6 +1418,18 @@
             <h2 class="synth-section-title">Visualizations &amp; Animations</h2>
             <p class="synth-section-subtitle">Animated walkthroughs of core BST operations — built to make the abstract concrete.</p>
           </div>
+          <button
+            type="button"
+            class="btn btn--ghost btn-sm anim-watched-btn"
+            id="btn-mark-animations-watched"
+            aria-pressed="false"
+            title="Mark all animations as viewed to count toward your 100% mastery"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" class="anim-watched-icon">
+              <path d="M2.5 7l3 3 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="anim-watched-label">Mark as viewed</span>
+          </button>
         </div>
 
         <div class="anim-grid">
@@ -1413,28 +1584,11 @@
           </div>
         </div>
         <div class="drawer-header-actions">
-          <button class="btn-icon header-key-btn" id="btn-toggle-key-settings" title="Configure Gemini API Key" aria-label="Configure Gemini API Key">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M11.5 1A3.5 3.5 0 008 4.5c0 .34.05.67.14.98L1 12.63v2.37h2.38l1.09-1.09.73.73.97-.97-.73-.73 1.46-1.46.73.73.97-.97-.73-.73 1.95-1.95A3.48 3.48 0 0011.5 8 3.5 3.5 0 0015 4.5 3.5 3.5 0 0011.5 1zm0 5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
-            </svg>
-          </button>
           <button class="btn-icon drawer-close-btn" id="btn-close-chat" aria-label="Close tutor chat" title="Close chat">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M13.5 4.5l-9 9M4.5 4.5l9 9"/>
             </svg>
           </button>
-        </div>
-      </div>
-      
-      <!-- Collapsible API Key Settings Panel -->
-      <div class="key-settings-panel key-settings-panel--hidden" id="key-settings-panel">
-        <div class="key-settings-inner">
-          <label class="key-settings-label" for="gemini-api-key-input">Gemini API Key</label>
-          <div class="key-input-row">
-            <input class="field-input key-input" type="password" id="gemini-api-key-input" placeholder="AIzaSy..." />
-            <button type="button" class="btn btn--primary btn-save-key" id="btn-save-api-key">Save</button>
-          </div>
-          <p class="key-settings-help">Key is stored locally in your browser. Leave empty to use the built-in Socratic mock tutor.</p>
         </div>
       </div>
 
@@ -1456,16 +1610,21 @@
 
   <!-- Persistent Floating Tutor Toggle Button -->
   <button id="tutor-floating-toggle" class="tutor-floating-toggle" aria-label="Open AI Tutor" title="Chat with Socratic Tutor">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-dasharray="none" stroke-width="2">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <span class="tutor-toggle-label">AI Tutor</span>
     <span class="pulse-ring"></span>
   </button>
 
+  <!-- Supabase JS Client & Service -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+
   <script src="js/state.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/canvas.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/tutor-chat.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/synthesis.js"></script>
