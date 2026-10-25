@@ -1,7 +1,39 @@
 /**
- * state.js — Centralized reactive state with Supabase persistence
- * Single source of truth. Mutations update in-memory state and sync to Supabase.
+ * state.js — Centralized in-memory state (database sync removed)
+ * Pure in-memory. No Supabase persistence. Ready for fresh DB integration.
  */
+
+/* ── Storage delegation via PathStore ─────────────────────────
+   State does not touch localStorage directly; all persistence
+   is mediated exclusively by PathStore.
+*/
+function _loadProfileFromStore() {
+  if (typeof PathStore !== 'undefined' && typeof PathStore.getProfile === 'function') {
+    return PathStore.getProfile();
+  }
+  return null;
+}
+
+function _saveProfileToStore(profile) {
+  if (typeof PathStore !== 'undefined' && typeof PathStore.setProfile === 'function') {
+    return PathStore.setProfile(profile);
+  }
+}
+
+function _loadVideoFromStore() {
+  if (typeof PathStore !== 'undefined' && typeof PathStore.getVideoData === 'function') {
+    return PathStore.getVideoData();
+  }
+  return { videoProgress: {}, videoPositions: {} };
+}
+
+function _saveVideoToStore(videoProgress, videoPositions) {
+  if (typeof PathStore !== 'undefined' && typeof PathStore.setVideoData === 'function') {
+    PathStore.setVideoData(videoProgress, videoPositions);
+  }
+}
+
+const _savedVideo = _loadVideoFromStore();
 
 const DEFAULT_STATE = {
   currentUser: null,
@@ -16,6 +48,10 @@ const DEFAULT_STATE = {
   flaggedGaps: [],
   summary: null,
   animationsWatched: false,
+  // Per-video watched flags: { 1: false, 2: false, 3: false }
+  videoProgress: Object.assign({ 1: false, 2: false, 3: false }, _savedVideo.videoProgress || {}),
+  // Per-video last playback position in seconds: { 1: 0, 2: 0, 3: 0 }
+  videoPositions: Object.assign({ 1: 0, 2: 0, 3: 0 }, _savedVideo.videoPositions || {}),
 };
 
 let _state = structuredClone(DEFAULT_STATE);
@@ -43,109 +79,18 @@ window.State = {
     return () => { _subs = _subs.filter(s => s !== fn); };
   },
 
-  /* ── Hydrate from Supabase on login or session restore ───── */
-  async initFromSupabase(user, session) {
+  /* ── Set user on login (no DB hydration) ───────────────── */
+  async initFromSupabase(user /*, session — reserved for future DB */) {
     const prev = _state;
     const baseState = structuredClone(DEFAULT_STATE);
+    const videoData = _loadVideoFromStore();
+    baseState.videoPositions = Object.assign({ 1: 0, 2: 0, 3: 0 }, videoData.videoPositions || {});
+    baseState.videoProgress = Object.assign({ 1: false, 2: false, 3: false }, videoData.videoProgress || {});
     baseState.currentUser = user ? {
       id: user.id,
       email: user.email,
       name: user.name || user.user_metadata?.name || user.email?.split('@')[0],
     } : null;
-
-    if (!user || !window.SupabaseService) {
-      _state = baseState;
-      _notify(prev);
-      return _state;
-    }
-
-    try {
-      const data = await window.SupabaseService.fetchUserData(user.id, baseState.currentTopic);
-      if (data) {
-        // 1. Stage progress
-        const stageProgressMap = new Map();
-        (data.stages || []).forEach(row => {
-          stageProgressMap.set(Number(row.stage_number), {
-            status: row.status,
-            mastered: row.mastered !== undefined ? Boolean(row.mastered) : false,
-          });
-        });
-
-        // 2. Chat history mapped by stage_number
-        const chatMap = new Map();
-        (data.chats || []).forEach(row => {
-          const sNum = Number(row.stage_number);
-          if (!chatMap.has(sNum)) {
-            chatMap.set(sNum, []);
-          }
-          chatMap.get(sNum).push({
-            sender: row.role === 'ai' ? 'tutor' : row.role,
-            text: row.message,
-            timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-          });
-        });
-
-        // 3. Assessments mapped by stage_number
-        const assessmentMap = new Map();
-        (data.assessments || []).forEach(row => {
-          const sNum = Number(row.stage_number);
-          let parsedEval = row.ai_evaluation;
-          if (typeof parsedEval === 'string') {
-            try {
-              parsedEval = JSON.parse(parsedEval);
-            } catch (e) {
-              // keep as string
-            }
-          }
-          assessmentMap.set(sNum, {
-            question: row.question,
-            answer: row.student_answer,
-            result: parsedEval,
-            timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-          });
-        });
-
-        // Rebuild stages array
-        baseState.stages = [0, 1, 2, 3].map(i => {
-          const prog = stageProgressMap.get(i);
-          let status = prog ? prog.status : (i === 0 ? 'not-started' : 'locked');
-          const mastered = prog ? Boolean(prog.mastered) : false;
-          const assessment = assessmentMap.get(i) || null;
-          const chat_history = chatMap.get(i) || [];
-
-          // If previous stage is completed and this stage has no row yet, unlock to 'not-started'
-          if (!prog && i > 0) {
-            const prevProg = stageProgressMap.get(i - 1);
-            if (prevProg?.status === 'completed') {
-              status = 'not-started';
-            }
-          }
-
-          return {
-            id: i,
-            status,
-            mastered,
-            assessment,
-            chat_history,
-          };
-        });
-
-        console.log('[State] Restored stages from Supabase:', baseState.stages.map(s => ({ stage: s.id + 1, status: s.status, mastered: s.mastered })));
-
-        // 4. Flagged gaps
-        baseState.flaggedGaps = (data.gaps || []).map(g => g.gap_description);
-
-        // 5. Summary
-        if (data.summary && data.summary.summary_text) {
-          baseState.summary = {
-            text: data.summary.summary_text,
-            timestamp: data.summary.updated_at ? new Date(data.summary.updated_at).getTime() : Date.now(),
-          };
-        }
-      }
-    } catch (err) {
-      console.error('[State] Failed to hydrate from Supabase:', err);
-    }
 
     _state = baseState;
     _notify(prev);
@@ -165,42 +110,16 @@ window.State = {
 
   /* ── Stages ───────────────────────────────────────────── */
   completeStage(index) {
-    let unlockedNextIndex = -1;
     State.setState(s => {
       const stages = s.stages.map((st, i) => {
         if (i === index) return { ...st, status: 'completed' };
         if (i === index + 1 && st.status === 'locked') {
-          unlockedNextIndex = i;
           return { ...st, status: 'not-started' };
         }
         return st;
       });
       return { ...s, stages };
     });
-
-    // Sync to Supabase in background
-    const user = _state.currentUser;
-    if (user?.id && window.SupabaseService) {
-      const currentStage = _state.stages[index];
-      window.SupabaseService.upsertStageProgress(
-        user.id,
-        _state.currentTopic,
-        index,
-        'completed',
-        currentStage?.mastered || false
-      );
-
-      if (unlockedNextIndex !== -1) {
-        window.SupabaseService.upsertStageProgress(
-          user.id,
-          _state.currentTopic,
-          unlockedNextIndex,
-          'not-started',
-          false
-        );
-      }
-    }
-
     return State.get();
   },
 
@@ -212,12 +131,15 @@ window.State = {
    * Weighted progress percentage (0–100):
    *   4 content stages  = 60%  (each completed stage worth 15)
    *   Summary generated = 20%
-   *   Animations viewed = 20%
+   *   Animations viewed = 20%  (all 3 videos must be watched)
    */
   computeMasteredPercent() {
     const stagePts     = _state.stages.filter(s => s.status === 'completed').length * 15;
     const summaryPts   = (_state.summary && _state.summary.text) ? 20 : 0;
-    const animationPts = _state.animationsWatched ? 20 : 0;
+    // Derive animationsWatched from all 3 videos being watched
+    const vp = _state.videoProgress || {};
+    const allVideosWatched = vp[1] && vp[2] && vp[3];
+    const animationPts = (_state.animationsWatched || allVideosWatched) ? 20 : 0;
     return stagePts + summaryPts + animationPts;
   },
 
@@ -249,39 +171,6 @@ window.State = {
       return { ...s, stages, flaggedGaps: updatedGaps };
     });
 
-    // Sync to Supabase in background
-    const user = _state.currentUser;
-    if (user?.id && window.SupabaseService) {
-      window.SupabaseService.insertAssessmentResponse(
-        user.id,
-        stageId,
-        question,
-        answer,
-        result,
-        result.rating || 'solid'
-      );
-
-      const currentStage = _state.stages[stageId];
-      if (currentStage) {
-        window.SupabaseService.upsertStageProgress(
-          user.id,
-          _state.currentTopic,
-          stageId,
-          currentStage.status,
-          currentStage.mastered
-        );
-      }
-
-      if (result.gap) {
-        window.SupabaseService.insertFlaggedGap(
-          user.id,
-          _state.currentTopic,
-          result.gap,
-          stageId
-        );
-      }
-    }
-
     return State.get();
   },
 
@@ -298,10 +187,13 @@ window.State = {
       return { ...s, stages };
     });
 
-    // Sync to Supabase in background
-    const user = _state.currentUser;
-    if (user?.id && window.SupabaseService) {
-      window.SupabaseService.insertChatMessage(user.id, stageId, sender, text);
+    if (typeof CloudStore !== 'undefined' && CloudStore.enqueue) {
+      CloudStore.enqueue('chat_messages', {
+        step_id: stageId || null,
+        role: sender === 'student' ? 'user' : (sender === 'tutor' ? 'assistant' : sender),
+        content: text,
+        created_at: new Date().toISOString()
+      });
     }
   },
 
@@ -313,11 +205,17 @@ window.State = {
       }
       return s;
     });
+  },
 
-    const user = _state.currentUser;
-    if (user?.id && window.SupabaseService) {
-      window.SupabaseService.insertFlaggedGap(user.id, _state.currentTopic, gap, 0);
-    }
+  logAdaptation(entry) {
+    State.setState(s => {
+      const adaptations = s.adaptations || [];
+      return { ...s, adaptations: [...adaptations, entry] };
+    });
+  },
+
+  getAdaptations() {
+    return (_state.adaptations || []).slice();
   },
 
   /* ── Synthesis Summary ────────────────────────────────── */
@@ -330,10 +228,8 @@ window.State = {
       },
     }));
 
-    // Sync to Supabase in background
-    const user = _state.currentUser;
-    if (user?.id && window.SupabaseService) {
-      window.SupabaseService.upsertSummary(user.id, _state.currentTopic, text);
+    if (typeof CloudStore !== 'undefined' && CloudStore.syncSummary) {
+      CloudStore.syncSummary(text, 'bst');
     }
 
     return State.get();
@@ -348,4 +244,113 @@ window.State = {
     State.setState(s => ({ ...s, animationsWatched: Boolean(watched) }));
     return State.get();
   },
+
+  /* ── Video Progress ──────────────────────────────────────── */
+
+  /**
+   * Returns a copy of the videoProgress map { 1: bool, 2: bool, 3: bool }.
+   */
+  getVideoProgress() {
+    return { ...(_state.videoProgress || { 1: false, 2: false, 3: false }) };
+  },
+
+  /**
+   * Marks a specific video (1, 2, or 3) as watched.
+   * Automatically sets animationsWatched when all three are done.
+   */
+  setVideoWatched(videoIndex) {
+    State.setState(s => {
+      const vp = { ...(s.videoProgress || { 1: false, 2: false, 3: false }), [videoIndex]: true };
+      const allDone = vp[1] && vp[2] && vp[3];
+      const updated = { ...s, videoProgress: vp, animationsWatched: allDone || s.animationsWatched };
+      _saveVideoToStore(updated.videoProgress, updated.videoPositions);
+      return updated;
+    });
+    return State.get();
+  },
+
+  /**
+   * Saves current playback position (seconds) for a video so the student
+   * can resume where they left off.
+   */
+  saveVideoPosition(videoIndex, seconds) {
+    const curPos = (_state.videoPositions || {})[videoIndex];
+    if (typeof curPos === 'number' && Math.abs(curPos - seconds) < 1) {
+      return;
+    }
+    const nextPositions = { ...(_state.videoPositions || { 1: 0, 2: 0, 3: 0 }), [videoIndex]: seconds };
+    _saveVideoToStore(_state.videoProgress, nextPositions);
+    State.setState(s => ({
+      ...s,
+      videoPositions: nextPositions,
+    }));
+  },
+
+  /**
+   * Returns the last saved playback position for a video (or 0).
+   */
+  getVideoPosition(videoIndex) {
+    return (_state.videoPositions || {})[videoIndex] || 0;
+  },
+
+  /* ── Learner Profile ────────────────────────────────────── */
+
+  /**
+   * Returns the stored learner profile, or null if none exists.
+   * Shape: { level, selfReportedLevel, placement, createdAt }
+   */
+  getProfile() {
+    return _loadProfileFromStore();
+  },
+
+  /**
+   * Persists the learner profile via PathStore.
+   * Pass null to clear (e.g. on restart).
+   */
+  setProfile(profile) {
+    _saveProfileToStore(profile);
+    return profile;
+  },
+
+  /**
+   * Resets path-specific state while preserving account login.
+   */
+  resetPathState() {
+    State.setState(s => ({
+      ...s,
+      stages: [0, 1, 2, 3].map(i => ({
+        id: i,
+        status: i === 0 ? 'not-started' : 'locked',
+        mastered: false,
+        assessment: null,
+        chat_history: [],
+      })),
+      flaggedGaps: [],
+      summary: null,
+      animationsWatched: false,
+      videoProgress: { 1: false, 2: false, 3: false },
+      videoPositions: { 1: 0, 2: 0, 3: 0 },
+    }));
+  },
+
+  /* ── Reflections & Session (PathStore delegation) ───────── */
+  getReflections() {
+    return typeof PathStore !== 'undefined' ? PathStore.getReflections() : {};
+  },
+
+  getReflection(stepId) {
+    return typeof PathStore !== 'undefined' ? PathStore.getReflection(stepId) : null;
+  },
+
+  saveReflection(stepId, data) {
+    return typeof PathStore !== 'undefined' ? PathStore.saveReflection(stepId, data) : null;
+  },
+
+  getSession() {
+    return typeof PathStore !== 'undefined' ? PathStore.getSession() : null;
+  },
 };
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = window.State;
+}

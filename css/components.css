@@ -33,6 +33,7 @@
 .toast--success {
   border-color: var(--glow-border);
 }
+
 .toast--success::before {
   content: '✓';
   width: 22px;
@@ -53,17 +54,35 @@
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
+
 @keyframes toast-out {
-  to   { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
 }
 
 /* ── Particle burst ──────────────────────────────────────────*/
 @keyframes particle-fly {
-  0%   { transform: translate(0,0) scale(1); opacity: 1; }
-  100% { transform: translate(var(--tx),var(--ty)) scale(0); opacity: 0; }
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
+  }
 }
 
 .particle {
@@ -79,57 +98,167 @@
 
 /* ── Node pulse on completion ────────────────────────────────*/
 @keyframes node-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(95,171,122,0.5); }
-  60%  { box-shadow: 0 0 0 14px rgba(95,171,122,0); }
-  100% { box-shadow: 0 0 0 0   rgba(95,171,122,0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(95, 171, 122, 0.5);
+  }
+
+  60% {
+    box-shadow: 0 0 0 14px rgba(95, 171, 122, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(95, 171, 122, 0);
+  }
 }
+
 .stage-card[data-status="completed"] .stage-node-ring {
   animation: node-pulse 1s ease-out;
 }
 
 /* ── Card entrance ───────────────────────────────────────────*/
 @keyframes card-rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Unlock spring ───────────────────────────────────────────*/
 @keyframes card-unlock {
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.025); }
-  65%  { transform: scale(0.99); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.025);
+  }
+
+  65% {
+    transform: scale(0.99);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
+
 .stage-card--just-unlocked .stage-body {
   animation: card-unlock var(--dur-lg) var(--ease-spring);
 }
 
 /* ── Synthesis reveal ────────────────────────────────────────*/
 @keyframes synth-reveal {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.completion-cta { animation: synth-reveal var(--dur-lg) var(--ease-expo) both; }
+
+.completion-cta {
+  animation: synth-reveal var(--dur-lg) var(--ease-expo) both;
+}
 
 /* ── Header completion glow ──────────────────────────────────*/
 @keyframes header-glow {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
+
 .topic-header--complete .topic-title {
-  background: linear-gradient(90deg, var(--cream), var(--glow), var(--cream));
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: header-glow 3s ease infinite;
+  color: var(--leaf);
+  text-shadow: none;
+  filter: none;
 }
 
 /* ── Utility: hidden classes ─────────────────────────────────*/
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}
 
 /* ── Mobile toasts ───────────────────────────────────────────*/
 @media (max-width: 480px) {
-  .toast-container { bottom: var(--sp-4); left: var(--sp-4); right: var(--sp-4); }
-  .toast { max-width: 100%; }
+  .toast-container {
+    bottom: var(--sp-4);
+    left: var(--sp-4);
+    right: var(--sp-4);
+  }
+
+  .toast {
+    max-width: 100%;
+  }
+}
+
+/* ── Topbar Cloud Sync Status Badge (Prompt S2) ──────────────*/
+.topbar-sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--cream-3);
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5fab7a; /* emerald */
+  transition: background-color 0.25s ease;
+  flex-shrink: 0;
+}
+
+.topbar-sync-status[data-status="saving"] .sync-dot {
+  background: #f59e0b; /* amber */
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  animation: sync-pulse-dot 1.2s infinite ease-in-out;
+}
+
+.topbar-sync-status[data-status="saving"] .sync-text {
+  color: var(--cream-2);
+}
+
+.topbar-sync-status[data-status="saved"] .sync-dot {
+  background: #5fab7a;
+}
+
+.topbar-sync-status[data-status="saved"] .sync-text {
+  color: var(--cream-3);
+}
+
+.topbar-sync-status[data-status="offline"] .sync-dot {
+  background: #94a3b8; /* slate/gray */
+}
+
+.topbar-sync-status[data-status="offline"] .sync-text {
+  color: #94a3b8;
+}
+
+@keyframes sync-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
 }

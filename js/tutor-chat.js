@@ -5,8 +5,6 @@
 
 (function initTutorChatService() {
 
-  // GEMINI_API_KEY is loaded globally from js/config.js (gitignored)
-
   const TOPIC_NAMES = {
     0: "Theory & Core Concepts (Stage 1 Foundations)",
     1: "University Lectures & Talks (Stage 2 Top Lectures)",
@@ -75,11 +73,11 @@
   window.TutorChatService = {
 
     getApiKey() {
-      return GEMINI_API_KEY;
+      return '';
     },
 
     saveApiKey(key) {
-      // Key is embedded directly; manual storage no longer needed
+      // Obsolete: Keys are managed by server
     },
 
     getQuestionForStage(stageId) {
@@ -87,62 +85,110 @@
     },
 
     /**
-     * Evaluates a student stage assessment answer.
+     * Evaluates a student stage assessment answer using structured JSON.
      */
     async evaluateAssessment(stageId, question, studentAnswer) {
-      try {
-        return await this.callGeminiAssessmentAPI(stageId, question, studentAnswer, GEMINI_API_KEY);
-      } catch (err) {
-        console.warn("[tutor-chat] Gemini Assessment API failed, falling back to mock evaluator:", err);
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (AIModule && AIModule.isMockEnabled()) {
         return this.getMockAssessmentResponse(stageId, studentAnswer);
+      }
+
+      try {
+        return await this.callGeminiAssessmentAPI(stageId, question, studentAnswer);
+      } catch (err) {
+        if (err && err.code === 'NO_KEY') {
+          console.warn("[tutor-chat] No API key present, using mock evaluator.");
+          return this.getMockAssessmentResponse(stageId, studentAnswer);
+        }
+        console.error("[tutor-chat] Gemini Assessment API failed:", err);
+        throw err;
       }
     },
 
-    async callGeminiAssessmentAPI(stageId, question, studentAnswer, apiKey) {
+    async callGeminiAssessmentAPI(stageId, question, studentAnswer) {
       const topic = TOPIC_NAMES[stageId] || "Trees and BSTs";
       const stageName = STAGE_NAMES[stageId] || "Stage";
+      const supportSuffix = (typeof MindsetEngine !== 'undefined' && MindsetEngine.getEffectiveSupport)
+        ? MindsetEngine.getEffectiveSupport().promptBlock
+        : '';
       const promptText = ASSESSMENT_EVALUATION_TEMPLATE
         .replace("{current_topic}", topic)
         .replace("{stage_name}", stageName)
         .replace("{question}", question)
-        .replace("{student_answer}", studentAnswer);
+        .replace("{student_answer}", studentAnswer) + supportSuffix;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [{ text: promptText }]
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: "application/json",
-            maxOutputTokens: 600
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini Assessment API Error (${response.status}): ${errText}`);
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (!AIModule) {
+        throw new Error("AI module (js/ai.js) is not loaded.");
       }
 
-      const data = await response.json();
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-        const text = data.candidates[0].content.parts[0].text;
-        return this.parseAssessmentResponse(text);
-      } else {
-        throw new Error("Invalid response payload from Gemini Assessment API");
+      const res = await AIModule.call({
+        system: "You are an expert DSA assessment evaluator. Evaluate the student's answer. Respond ONLY with valid JSON conforming to the schema." + supportSuffix,
+        messages: [{ role: 'user', content: promptText }],
+        json: true,
+        schema: AIModule.schemas.EVALUATION,
+        maxTokens: 600
+      });
+
+      const rawRating = String(res.rating || 'needs_review').toLowerCase().trim();
+      const rating = (rawRating === 'solid' || rawRating === 'partial') ? rawRating : 'needs_review';
+
+      return {
+        rating,
+        feedback: res.feedback || '',
+        assessment: res.feedback || '',
+        missing: res.missing || 'None',
+        suggestion: res.suggestion || 'Keep practicing this concept.',
+        gap: res.gap && res.gap !== 'none' && res.gap !== 'null' ? res.gap : null,
+        fullText: `${res.feedback || ''}\n${res.missing ? `Focus: ${res.missing}` : ''}\n${res.suggestion ? `Tip: ${res.suggestion}` : ''}`.trim()
+      };
+    },
+
+    /**
+     * Evaluates a placement diagnostic answer using structured JSON.
+     */
+    async evaluatePlacement(cluster, question, studentAnswer) {
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (AIModule && AIModule.isMockEnabled()) {
+        return this.getMockAssessmentResponse(0, studentAnswer);
+      }
+
+      try {
+        const promptText = `Diagnostic placement check for topic cluster "${cluster}":
+Question: ${question}
+Student Answer: ${studentAnswer}
+
+Evaluate whether understanding is solid, partial, or needs_review.`;
+
+        const res = await AIModule.call({
+          system: "You are an expert DSA diagnostic placement evaluator. Respond ONLY with valid JSON conforming to the schema.",
+          messages: [{ role: 'user', content: promptText }],
+          json: true,
+          schema: AIModule.schemas.EVALUATION,
+          maxTokens: 600
+        });
+
+        const rawRating = String(res.rating || 'needs_review').toLowerCase().trim();
+        const rating = (rawRating === 'solid' || rawRating === 'partial') ? rawRating : 'needs_review';
+
+        return {
+          rating,
+          feedback: res.feedback || '',
+          assessment: res.feedback || '',
+          missing: res.missing || 'None',
+          suggestion: res.suggestion || '',
+          gap: res.gap || null
+        };
+      } catch (err) {
+        if (err && err.code === 'NO_KEY') {
+          return this.getMockAssessmentResponse(0, studentAnswer);
+        }
+        throw err;
       }
     },
 
     parseAssessmentResponse(rawText) {
-      // 1. Try parsing JSON structure first
+      // 1. Try parsing JSON structure
       let json = null;
       try {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -150,66 +196,37 @@
           json = JSON.parse(jsonMatch[0]);
         }
       } catch (e) {
-        console.warn("[tutor-chat] Failed to parse JSON response, falling back to heuristic parsing:", e);
+        console.warn("[tutor-chat] Failed to parse JSON response:", e);
       }
 
       if (json && typeof json === 'object') {
-        const validRatings = ['solid', 'partial', 'misconception'];
+        const validRatings = ['solid', 'partial', 'needs_review'];
         let rating = validRatings.includes(String(json.rating).toLowerCase())
           ? String(json.rating).toLowerCase()
-          : 'solid';
+          : (String(json.rating).toLowerCase() === 'misconception' ? 'needs_review' : 'needs_review');
+
+        const feedbackText = json.feedback || json.assessment || rawText;
 
         return {
           rating,
-          assessment: json.assessment || rawText,
+          feedback: feedbackText,
+          assessment: feedbackText,
           missing: json.missing || "No major errors or missing concepts identified.",
           suggestion: json.suggestion || "Keep building on these core principles in the next stages!",
-          fullText: `${json.assessment || ''}\n${json.missing || ''}\n${json.suggestion || ''}`,
+          fullText: `${feedbackText}\n${json.missing ? `Focus: ${json.missing}` : ''}\n${json.suggestion ? `Tip: ${json.suggestion}` : ''}`.trim(),
           gap: json.gap || null
         };
       }
 
-      // 2. Fallback heuristic parsing for plain text LLM responses
-      const gapRegex = /\[GAP:\s*([^\]]+)\]/i;
-      const gapMatch = rawText.match(gapRegex);
-      let gap = gapMatch ? gapMatch[1].trim() : null;
-      let cleanText = rawText.replace(gapRegex, '').trim();
-
-      // Extract 3 sections if structured 1), 2), 3)
-      let assessment = cleanText;
-      let missing = "No major errors or missing concepts identified.";
-      let suggestion = "Keep building on these core principles in the next stages!";
-
-      const p1 = cleanText.search(/1[\)\.]/i);
-      const p2 = cleanText.search(/2[\)\.]/i);
-      const p3 = cleanText.search(/3[\)\.]/i);
-
-      if (p1 !== -1 && p2 !== -1 && p3 !== -1 && p1 < p2 && p2 < p3) {
-        assessment = cleanText.slice(p1, p2).replace(/^1[\)\.]\s*/i, '').trim();
-        missing    = cleanText.slice(p2, p3).replace(/^2[\)\.]\s*/i, '').trim();
-        suggestion = cleanText.slice(p3).replace(/^3[\)\.]\s*/i, '').trim();
-      }
-
-      // Robust rating determination without naive substring matching on 'incorrect'
-      let rating = 'solid';
-      const lowerAssessment = assessment.toLowerCase();
-      const lowerMissing = missing.toLowerCase();
-
-      if (gap || lowerAssessment.includes('misconception') || lowerMissing.includes('misconception')) {
-        rating = 'misconception';
-      } else if (lowerAssessment.includes('solid') || lowerMissing.includes('nothing missing') || lowerMissing.includes('no major') || lowerMissing.includes('none')) {
-        rating = 'solid';
-      } else if (lowerAssessment.includes('partial') || lowerMissing.includes('could expand') || lowerMissing.includes('missing')) {
-        rating = 'partial';
-      }
-
+      // If parsing fails completely, do not guess rating from free text keywords
       return {
-        rating,
-        assessment,
-        missing,
-        suggestion,
-        fullText: cleanText,
-        gap
+        rating: 'needs_review',
+        feedback: "I couldn't evaluate that. Please try again.",
+        assessment: "I couldn't evaluate that. Please try again.",
+        missing: 'Unable to parse evaluation output.',
+        suggestion: 'Please re-submit your response.',
+        fullText: "I couldn't evaluate that. Please try again.",
+        gap: null
       };
     },
 
@@ -227,7 +244,7 @@
         missing = "A complete explanation requires elaborating on how the algorithm or tree structure enforces the invariant step-by-step.";
         suggestion = "Try adding 2-3 sentences explaining what happens at each node comparison or traversal step.";
       } else if (ansLower.includes('root first') || ansLower.includes('first root') || ansLower.includes('random order')) {
-        rating = 'misconception';
+        rating = 'needs_review';
         gap = `Misconception in stage ${stageId}: confused traversal order or BST invariant`;
         assessment = "You have identified key terms, but there is a slight misconception regarding node ordering.";
         missing = "In-order traversal visits the left subtree first, then the root node, and finally the right subtree. Visiting the root first corresponds to pre-order traversal.";
@@ -241,6 +258,7 @@
 
       return {
         rating,
+        feedback: assessment,
         assessment,
         missing,
         suggestion,
@@ -256,58 +274,68 @@
      * @returns {Promise<{text: string, gap: string|null}>}
      */
     async askQuestion(stageId, messageHistory) {
-      try {
-        return await this.callGeminiAPI(stageId, messageHistory, GEMINI_API_KEY);
-      } catch (err) {
-        console.warn("[tutor-chat] Gemini API failed, falling back to mock:", err);
+      // Prompt 6: Safety Note check for serious distress beyond studying
+      const studentMessages = (messageHistory || []).filter(m => msgIsFromStudent(m));
+      const lastStudentMsg = studentMessages[studentMessages.length - 1];
+      if (lastStudentMsg && typeof MindsetEngine !== 'undefined' && MindsetEngine.checkDistress(lastStudentMsg.text)) {
+        return {
+          text: MindsetEngine.getDistressResponse(),
+          gap: null,
+          isDistress: true
+        };
+      }
+
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (AIModule && AIModule.isMockEnabled()) {
+        this.updateMockBadge(true);
         return this.getMockResponse(stageId, messageHistory);
+      }
+
+      try {
+        const res = await this.callGeminiAPI(stageId, messageHistory);
+        this.updateMockBadge(false);
+        return res;
+      } catch (err) {
+        if (err && err.code === 'NO_KEY') {
+          console.warn("[tutor-chat] No API key present, using mock tutor.");
+          this.updateMockBadge(true);
+          return this.getMockResponse(stageId, messageHistory);
+        }
+        console.error("[tutor-chat] Gemini API failed:", err);
+        throw err;
+      }
+    },
+
+    updateMockBadge(show) {
+      if (typeof document === 'undefined') return;
+      const badge = document.getElementById('tutor-mock-badge');
+      if (badge) {
+        badge.style.display = show ? 'inline-block' : 'none';
       }
     },
 
     /**
-     * Makes a request to the Gemini API.
+     * Makes a request to the Gemini API using AI.call.
      */
-    async callGeminiAPI(stageId, messageHistory, apiKey) {
+    async callGeminiAPI(stageId, messageHistory) {
       const topic = TOPIC_NAMES[stageId] || "Trees and BSTs";
-      const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace("{current_topic}", topic);
+      const supportSuffix = (typeof MindsetEngine !== 'undefined' && MindsetEngine.getEffectiveSupport)
+        ? MindsetEngine.getEffectiveSupport().promptBlock
+        : '';
+      const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace("{current_topic}", topic) + supportSuffix;
 
-      // Convert message history to Gemini format (user vs model)
-      const contents = messageHistory.map(msg => ({
-        role: msg.sender === 'student' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      }));
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (!AIModule) {
+        throw new Error("AI module (js/ai.js) is not loaded.");
+      }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: contents,
-          systemInstruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800
-          }
-        })
+      const text = await AIModule.call({
+        system: systemPrompt,
+        messages: messageHistory,
+        maxTokens: 800
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini API Error (${response.status}): ${errText}`);
-      }
-
-      const data = await response.json();
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-        const text = data.candidates[0].content.parts[0].text;
-        return this.parseResponse(text);
-      } else {
-        throw new Error("Invalid response payload from Gemini API");
-      }
+      return this.parseResponse(text);
     },
 
     /**
@@ -331,57 +359,42 @@
      * Generates a personalized learning synthesis summary for the student.
      */
     async generateSynthesisSummary(assessmentSummaries, flaggedGaps, topic) {
-      try {
-        return await this.callGeminiSummaryAPI(assessmentSummaries, flaggedGaps, topic, GEMINI_API_KEY);
-      } catch (err) {
-        console.warn("[tutor-chat] Gemini Summary API failed, falling back to mock synthesis:", err);
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (AIModule && AIModule.isMockEnabled()) {
         return this.getMockSummaryResponse(assessmentSummaries, flaggedGaps, topic);
+      }
+
+      try {
+        return await this.callGeminiSummaryAPI(assessmentSummaries, flaggedGaps, topic);
+      } catch (err) {
+        if (err && err.code === 'NO_KEY') {
+          console.warn("[tutor-chat] No API key present, using mock synthesis.");
+          return this.getMockSummaryResponse(assessmentSummaries, flaggedGaps, topic);
+        }
+        console.error("[tutor-chat] Gemini Summary API failed:", err);
+        throw err;
       }
     },
 
-    async callGeminiSummaryAPI(assessmentSummaries, flaggedGaps, topic, apiKey) {
+    async callGeminiSummaryAPI(assessmentSummaries, flaggedGaps, topic) {
+      const supportSuffix = (typeof MindsetEngine !== 'undefined' && MindsetEngine.getEffectiveSupport)
+        ? MindsetEngine.getEffectiveSupport().promptBlock
+        : '';
       const promptText = SUMMARY_PROMPT_TEMPLATE
         .replace("{topic}", topic || "Trees and Binary Search Trees")
         .replace("{assessment_summaries}", assessmentSummaries || "Completed all 4 stages of Trees & BSTs.")
-        .replace("{flagged_gaps}", flaggedGaps || "None logged during deep-dive.");
+        .replace("{flagged_gaps}", flaggedGaps || "None logged during deep-dive.") + supportSuffix;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (!AIModule) {
+        throw new Error("AI module (js/ai.js) is not loaded.");
+      }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [{ text: promptText }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            // Gemini Flash Lite supports up to 8192 output tokens — use the ceiling
-            // to eliminate MAX_TOKENS truncation as the bottleneck for long summaries.
-            maxOutputTokens: 8192
-          }
-        })
+      return await AIModule.call({
+        system: "You are an academic CS tutor synthesizing a student's learning journey into an in-depth textbook chapter summary." + supportSuffix,
+        messages: [{ role: 'user', content: promptText }],
+        maxTokens: 8192
       });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini Summary API Error (${response.status}): ${errText}`);
-      }
-
-      const data = await response.json();
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-        // Warn explicitly if the model ran out of tokens — helps diagnose truncation.
-        const finishReason = data.candidates[0].finishReason;
-        if (finishReason === 'MAX_TOKENS') {
-          console.warn('[tutor-chat] Summary hit MAX_TOKENS limit — output was truncated. Consider raising maxOutputTokens further or splitting the prompt.');
-        }
-        return data.candidates[0].content.parts[0].text;
-      } else {
-        throw new Error("Invalid response payload from Gemini Summary API");
-      }
     },
 
     getMockSummaryResponse(assessmentSummaries, flaggedGaps, topic) {
@@ -444,6 +457,15 @@ As a next step in your learning journey, we recommend exploring AVL trees in imp
       const turnCount = studentMessages.length;
       const lastMsgText = studentMessages[studentMessages.length - 1]?.text || '';
       const query = lastMsgText.toLowerCase().trim();
+
+      // Prompt 6: Serious distress check
+      if (typeof MindsetEngine !== 'undefined' && MindsetEngine.checkDistress(query)) {
+        return {
+          text: MindsetEngine.getDistressResponse(),
+          gap: null,
+          isDistress: true
+        };
+      }
 
       let text = '';
       let gap = null;
@@ -552,6 +574,382 @@ As a next step in your learning journey, we recommend exploring AVL trees in imp
       }
 
       return { text, gap };
+    },
+
+    /**
+     * Evaluates a structured assignment attempt (Prompt 3).
+     * Deterministic checks first (exact answers), then AI evaluation per rubric criterion (0-3 each)
+     * plus one specific next step.
+     */
+    async evaluateAssignment(assignmentOrId, studentInputs) {
+      let assignment = assignmentOrId;
+      if (typeof assignment === 'string') {
+        assignment = (typeof Catalog !== 'undefined' && Catalog.byId) ? Catalog.byId(assignmentOrId) : null;
+      }
+      if (!assignment) {
+        throw new Error(`Assignment not found: ${assignmentOrId}`);
+      }
+
+      // 1. Run deterministic checks first
+      const detResults = this.runDeterministicAssignmentChecks(assignment, studentInputs);
+
+      // 2. Try AI evaluation if mock is not forced
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (AIModule && AIModule.isMockEnabled()) {
+        return this.getMockAssignmentEvaluation(assignment, studentInputs, detResults);
+      }
+
+      try {
+        return await this.callGeminiAssignmentAPI(assignment, studentInputs, detResults);
+      } catch (err) {
+        if (err && err.code === 'NO_KEY') {
+          console.warn("[tutor-chat] No API key present, using mock assignment evaluator.");
+          return this.getMockAssignmentEvaluation(assignment, studentInputs, detResults);
+        }
+        console.error("[tutor-chat] Gemini Assignment API failed:", err);
+        throw err;
+      }
+    },
+
+    runDeterministicAssignmentChecks(assignment, studentInputs) {
+      const results = {};
+      const id = assignment.id;
+      const det = assignment.deterministic;
+      if (!det) return results;
+
+      const normalizeSeq = (val) => {
+        if (val === undefined || val === null) return '';
+        return String(val)
+          .replace(/[\s,]+/g, ' ')
+          .trim()
+          .split(' ')
+          .filter(Boolean)
+          .join(',');
+      };
+
+      if (id === 'as-2') {
+        const userIn = normalizeSeq(studentInputs?.inOrder || studentInputs?.['in-order']);
+        const targetIn = normalizeSeq(det.inOrder);
+        const inMatch = userIn === targetIn;
+        results.inorder = {
+          correct: inMatch,
+          score: inMatch ? 3 : (userIn.length > 0 && userIn.split(',').length >= 4 ? 1 : 0),
+          explanation: inMatch
+            ? "In-order traversal is completely correct (10, 20, 30, 45, 50, 60, 70), visiting left subtree, root, right subtree."
+            : `In-order traversal should produce sorted ascending keys: 10, 20, 30, 45, 50, 60, 70. You entered "${studentInputs?.inOrder || studentInputs?.['in-order'] || '(empty)'}".`
+        };
+
+        const userPre = normalizeSeq(studentInputs?.preOrder || studentInputs?.['pre-order']);
+        const targetPre = normalizeSeq(det.preOrder);
+        const preMatch = userPre === targetPre;
+        results.preorder = {
+          correct: preMatch,
+          score: preMatch ? 3 : (userPre.startsWith('45') ? 1 : 0),
+          explanation: preMatch
+            ? "Pre-order traversal is completely correct (45, 20, 10, 30, 60, 50, 70), visiting root first, then left, then right."
+            : `Pre-order traversal must visit root first, then left subtree, then right subtree: 45, 20, 10, 30, 60, 50, 70. You entered "${studentInputs?.preOrder || studentInputs?.['pre-order'] || '(empty)'}".`
+        };
+
+        const userPost = normalizeSeq(studentInputs?.postOrder || studentInputs?.['post-order']);
+        const targetPost = normalizeSeq(det.postOrder);
+        const postMatch = userPost === targetPost;
+        results.postorder = {
+          correct: postMatch,
+          score: postMatch ? 3 : (userPost.endsWith('45') ? 1 : 0),
+          explanation: postMatch
+            ? "Post-order traversal is completely correct (10, 30, 20, 50, 70, 60, 45), visiting subtrees before the root."
+            : `Post-order traversal must visit children before their parent: 10, 30, 20, 50, 70, 60, 45. You entered "${studentInputs?.postOrder || studentInputs?.['post-order'] || '(empty)'}".`
+        };
+
+        const rawHeight = studentInputs?.height !== undefined ? String(studentInputs.height).trim() : '';
+        const userH = parseInt(rawHeight, 10);
+        const targetH = parseInt(det.height, 10);
+        const heightMatch = !isNaN(userH) && userH === targetH;
+        results.height = {
+          correct: heightMatch,
+          score: heightMatch ? 3 : 0,
+          explanation: heightMatch
+            ? "Tree height is 2, correctly calculated as the number of edges from the root 45 to the deepest leaves (10, 30, 50, 70)."
+            : `Tree height is 2 edges (root 45 -> level 1: 20, 60 -> level 2: 10, 30, 50, 70). You entered ${rawHeight || '(empty)'}.`
+        };
+      } else if (id === 'as-3') {
+        const userNode = String(studentInputs?.violatingNode || '').trim();
+        const nodeMatch = userNode === '45';
+        results.node = {
+          correct: nodeMatch,
+          score: nodeMatch ? 3 : 0,
+          explanation: nodeMatch
+            ? "Correctly identified node 45 as breaking the BST invariant."
+            : `Node 45 breaks the invariant (it is in the left subtree of 40 but 45 > 40), but you named "${userNode || '(none)'}".`
+        };
+      } else if (id === 'as-4') {
+        const userRepl = String(studentInputs?.replacementValue || '').trim();
+        const replMatch = userRepl === '35';
+        results.successor = {
+          correct: replMatch,
+          score: replMatch ? 3 : 0,
+          explanation: replMatch
+            ? "Correctly selected 35 as the in-order successor to replace deleted node 30."
+            : `The in-order successor of 30 is 35 (the minimum key in 30's right subtree), but you entered "${userRepl || '(none)'}".`
+        };
+        const shapeStr = String(studentInputs?.finalShape || '').replace(/\s+/g, ' ');
+        const shapeMatch = shapeStr.includes('35') && shapeStr.includes('50') && shapeStr.includes('70');
+        results.shape = {
+          correct: shapeMatch,
+          score: shapeMatch ? 3 : 1,
+          explanation: shapeMatch
+            ? "Final tree shape correctly reflects 35 promoted to replace 30, with 40 having no children."
+            : "Final shape should have 50 → (35, 70); 35 → (20, 40); 40 → (none, none)."
+        };
+      } else if (id === 'as-5') {
+        const userH = parseInt(String(studentInputs?.height || '').trim(), 10);
+        const hMatch = !isNaN(userH) && userH === 4;
+        results.height = {
+          correct: hMatch,
+          score: hMatch ? 3 : 0,
+          explanation: hMatch
+            ? "Correct height of 4 edges for a 5-node degenerate right-leaning chain."
+            : `Inserting 5 values in ascending order produces a chain of height 4 (4 edges: 10-20-30-40-50), but you entered "${studentInputs?.height ?? '(none)'}".`
+        };
+        const rotStr = String(studentInputs?.rotation || '').toLowerCase();
+        const rotMatch = rotStr.includes('left') || rotStr.includes('rr');
+        results.rotation = {
+          correct: rotMatch,
+          score: rotMatch ? 3 : 0,
+          explanation: rotMatch
+            ? "Correctly identified a single Left Rotation (RR case) at node 10."
+            : `Inserting 10, 20, 30 creates a right-right (RR) imbalance at root 10, resolved by a single left rotation.`
+        };
+      } else if (id === 'as-6') {
+        const db = String(studentInputs?.dbStructure || '').toLowerCase();
+        const dict = String(studentInputs?.dictStructure || '').toLowerCase();
+        const dbOk = db.includes('red-black') || db.includes('red black') || db.includes('r-b');
+        const dictOk = dict.includes('avl');
+        results.write_heavy = {
+          correct: dbOk,
+          score: dbOk ? 3 : 0,
+          explanation: dbOk
+            ? "Correctly selected Red-Black tree for write-heavy workload."
+            : "Red-Black tree is the standard choice for write-heavy workloads because it requires at most 2 rotations per insertion and 3 per deletion."
+        };
+        results.read_heavy = {
+          correct: dictOk,
+          score: dictOk ? 3 : 0,
+          explanation: dictOk
+            ? "Correctly selected AVL tree for read-heavy workload."
+            : "AVL tree is the ideal choice for read-heavy workloads because its strict balance factor guarantee (<= 1) provides strictly shorter search paths."
+        };
+      }
+
+      return results;
+    },
+
+    getMockAssignmentEvaluation(assignment, studentInputs, detResults) {
+      const criteriaResults = [];
+      const rubric = assignment.rubric || [];
+
+      for (const crit of rubric) {
+        if (detResults && detResults[crit.id] !== undefined) {
+          criteriaResults.push({
+            id: crit.id,
+            title: crit.title,
+            score: detResults[crit.id].score,
+            feedback: detResults[crit.id].explanation,
+            deterministic: true
+          });
+        } else {
+          // Heuristic evaluation for text explanation criteria
+          let score = 2;
+          let feedback = `Good reasoning on ${crit.title.toLowerCase()}.`;
+
+          const textValues = Object.values(studentInputs || {})
+            .filter(v => typeof v === 'string')
+            .join(' ')
+            .toLowerCase();
+
+          if (textValues.length < 15) {
+            score = 0;
+            feedback = `Criterion not sufficiently addressed. Provide a more detailed explanation for ${crit.title.toLowerCase()}.`;
+          } else if (crit.id === 'left_subtree' || crit.id === 'whole_subtree') {
+            const hasSubtree = textValues.includes('left') || textValues.includes('40') || textValues.includes('subtree') || textValues.includes('all');
+            score = hasSubtree ? 3 : 1;
+            feedback = hasSubtree
+              ? "Accurately noted that 45 lies in the left subtree of 40 where all keys must be < 40."
+              : "Make sure to explain that the BST invariant applies to ALL nodes in a subtree, not just immediate parent-child pairs.";
+          } else if (crit.id === 'invariant' || crit.id === 'degradation' || crit.id === 'tradeoffs') {
+            const hasKeywords = textValues.includes('invariant') || textValues.includes('order') || textValues.includes('balance') || textValues.includes('rotation') || textValues.includes('height') || textValues.includes('skew');
+            score = hasKeywords ? 3 : 2;
+            feedback = hasKeywords
+              ? `Clear, accurate explanation justifying ${crit.title.toLowerCase()}.`
+              : `Consider expanding on the underlying structural trade-offs for ${crit.title.toLowerCase()}.`;
+          } else if (crit.id === 'clarity') {
+            score = textValues.length > 50 ? 3 : (textValues.length > 20 ? 2 : 1);
+            feedback = score === 3
+              ? "Exemplary clarity and precise terminology."
+              : "Clear explanation, though could be more concise and structured.";
+          } else {
+            if (crit.id === 'correct_definition') {
+              const defOk = textValues.includes('left') && textValues.includes('right') && (textValues.includes('smaller') || textValues.includes('greater') || textValues.includes('<'));
+              score = defOk ? 3 : 2;
+              feedback = defOk ? "Completely accurate definition of the BST ordering property." : "State explicitly that left children are smaller and right children are greater.";
+            } else if (crit.id === 'numbered_example') {
+              const hasNum = /\d+/.test(textValues);
+              score = hasNum ? 3 : 0;
+              feedback = hasNum ? "Numbered example clearly demonstrates the ordering property." : "Add a numbered example (e.g. node 30 with children 20 and 40) to clarify.";
+            } else if (crit.id === 'every_node') {
+              const hasEvery = textValues.includes('every') || textValues.includes('each') || textValues.includes('all') || textValues.includes('subtree');
+              score = hasEvery ? 3 : 1;
+              feedback = hasEvery ? "Correctly emphasized that the rule must hold at every node in the tree." : "Emphasize that the rule applies to every single node, not just the root.";
+            } else {
+              score = 3;
+              feedback = `Solid demonstration of ${crit.title.toLowerCase()}.`;
+            }
+          }
+
+          criteriaResults.push({
+            id: crit.id,
+            title: crit.title,
+            score,
+            feedback,
+            deterministic: false
+          });
+        }
+      }
+
+      const totalScore = criteriaResults.reduce((acc, c) => acc + (c.score || 0), 0);
+      const maxScore = criteriaResults.length * 3;
+      const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+      let band = 'Needs support';
+      let rating = 'weak';
+      if (percentage >= 75) {
+        band = 'Strong';
+        rating = 'solid';
+      } else if (percentage >= 45) {
+        band = 'Developing';
+        rating = 'partial';
+      } else {
+        band = 'Needs support';
+        rating = 'weak';
+      }
+
+      let nextStep = "Continue building on these concepts in the next roadmap stage.";
+      if (percentage >= 75) {
+        nextStep = "Excellent work! Challenge yourself with the next deeper concept or edge-case scenarios.";
+      } else if (assignment.id === 'as-2') {
+        const mistakeCrit = criteriaResults.find(c => c.score < 3);
+        if (mistakeCrit) {
+          nextStep = `Focus on ${mistakeCrit.title.toLowerCase()}: trace how the tree traversal visits nodes step-by-step.`;
+        }
+      } else {
+        const lowest = criteriaResults.slice().sort((a, b) => a.score - b.score)[0];
+        if (lowest && lowest.score < 3) {
+          nextStep = `Review ${lowest.title.toLowerCase()} before moving to advanced balancing.`;
+        }
+      }
+
+      return {
+        criteria: criteriaResults,
+        totalScore,
+        maxScore,
+        percentage,
+        band,
+        rating,
+        nextStep,
+        deterministicResults: detResults,
+        aiEvaluated: false
+      };
+    },
+
+    async callGeminiAssignmentAPI(assignment, studentInputs, detResults) {
+      const rubricText = (assignment.rubric || []).map(r => `- ${r.id} (${r.title}): ${r.description}`).join('\n');
+      const detText = JSON.stringify(detResults || {});
+      const inputsText = JSON.stringify(studentInputs || {});
+
+      const supportSuffix = (typeof MindsetEngine !== 'undefined' && MindsetEngine.getEffectiveSupport)
+        ? MindsetEngine.getEffectiveSupport().promptBlock
+        : '';
+
+      const prompt = `You are evaluating a student's structured assignment on Binary Search Trees.
+Assignment: ${assignment.title}
+Brief: ${assignment.brief}
+
+Deterministic Check Results (exact checks already performed):
+${detText}
+
+Student Inputs:
+${inputsText}
+
+Rubric (each criterion must be scored 0 to 3):
+${rubricText}
+Scale:
+0 = Missing, serious misconceptions, or incorrect
+1 = Partial understanding with significant gaps
+2 = Mostly correct with minor omissions
+3 = Exemplary, fully accurate and clear
+
+Note: For any criterion already checked in deterministic checks, respect that score unless student explanation provides further nuance.
+Provide a concise, helpful feedback sentence for each criterion explaining any mistakes.
+Provide one specific actionable next step for the learner.${supportSuffix}`;
+
+      const AIModule = (typeof AI !== 'undefined') ? AI : (typeof window !== 'undefined' ? window.AI : null);
+      if (!AIModule) {
+        throw new Error("AI module (js/ai.js) is not loaded.");
+      }
+
+      const parsed = await AIModule.call({
+        system: "You are an expert grading assistant. Respond ONLY with valid JSON matching the schema." + supportSuffix,
+        messages: [{ role: 'user', content: prompt }],
+        json: true,
+        schema: AIModule.schemas.ASSIGNMENT,
+        maxTokens: 800
+      });
+
+      if (!parsed || !Array.isArray(parsed.criteria)) {
+        throw new Error("Invalid schema from AI assignment evaluation");
+      }
+
+      const criteriaResults = (assignment.rubric || []).map(r => {
+        const found = parsed.criteria.find(c => c.id === r.id);
+        const score = typeof found?.score === 'number' ? Math.max(0, Math.min(3, found.score)) : (detResults[r.id]?.score ?? 2);
+        const feedback = found?.feedback || detResults[r.id]?.explanation || "Good effort on this criterion.";
+        return {
+          id: r.id,
+          title: r.title,
+          score,
+          feedback,
+          deterministic: !!detResults[r.id]
+        };
+      });
+
+      const totalScore = criteriaResults.reduce((acc, c) => acc + (c.score || 0), 0);
+      const maxScore = criteriaResults.length * 3;
+      const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+      let band = 'Needs support';
+      let rating = 'weak';
+      if (percentage >= 75) {
+        band = 'Strong';
+        rating = 'solid';
+      } else if (percentage >= 45) {
+        band = 'Developing';
+        rating = 'partial';
+      } else {
+        band = 'Needs support';
+        rating = 'weak';
+      }
+
+      return {
+        criteria: criteriaResults,
+        totalScore,
+        maxScore,
+        percentage,
+        band,
+        rating,
+        nextStep: parsed.nextStep || "Continue exploring the next stage of your roadmap.",
+        deterministicResults: detResults,
+        aiEvaluated: true
+      };
     }
   };
 
@@ -571,6 +969,10 @@ As a next step in your learning journey, we recommend exploring AVL trees in imp
       `Interesting! If you had to explain this concept to someone who has never studied computer science, what analogy or mental model would you start with?`
     ];
     return responses[(turnCount - 1) % responses.length];
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = window.TutorChatService;
   }
 
 })();

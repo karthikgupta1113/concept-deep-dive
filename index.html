@@ -8,13 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/tokens.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/auth.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/synthesis.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/tutor-chat.css" />
+  <link rel="stylesheet" href="css/tokens.css?v=2" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/auth.css?v=2" />
+  <link rel="stylesheet" href="css/dashboard.css?v=solidgreen" />
+  <link rel="stylesheet" href="css/synthesis.css?v=2" />
+  <link rel="stylesheet" href="css/components.css?v=solidgreen" />
+  <link rel="stylesheet" href="css/tutor-chat.css?v=2" />
+  <link rel="stylesheet" href="css/onboarding.css?v=1" />
+  <link rel="stylesheet" href="css/roadmap.css?v=1" />
+  <link rel="stylesheet" href="css/router.css?v=1" />
 </head>
 <body data-view="auth">
 
@@ -25,6 +28,96 @@
       <span class="app-loader-text">Loading Concept Deep‑Dive...</span>
     </div>
   </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       SLIM APP TOP BAR
+  ═════════════════════════════════════════════════════════ -->
+  <header id="app-topbar" class="app-topbar" hidden>
+    <div class="topbar-left">
+      <a href="#/ready" class="topbar-logo" id="topbar-logo" aria-label="Concept Deep-Dive home">
+        <span class="topbar-logo-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="13" stroke="#5FAB7A" stroke-width="1.5"/>
+            <path d="M14 6v16M8 10l6-4 6 4M9 16l5-4 5 4M10 22l4-4 4 4" stroke="#5FAB7A" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="topbar-logo-word">Concept Deep‑Dive</span>
+      </a>
+    </div>
+
+    <div class="topbar-center">
+      <!-- Preparation Meter -->
+      <div class="topbar-prep-meter" id="topbar-prep-meter" title="Preparation Meter">
+        <div class="prep-meter-ring" aria-hidden="true">
+          <svg viewBox="0 0 36 36" class="prep-ring-svg">
+            <circle class="prep-ring-track" cx="18" cy="18" r="15.9"/>
+            <circle class="prep-ring-fill" cx="18" cy="18" r="15.9" id="topbar-ring-fill"/>
+          </svg>
+        </div>
+        <div class="prep-meter-info">
+          <span class="prep-meter-val" id="topbar-prep-pct">0%</span>
+          <span class="prep-meter-lbl">Preparation</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <!-- Cloud Sync Status Badge -->
+      <div class="topbar-sync-status" id="topbar-sync-status" data-status="saved" title="Cloud Sync Status" aria-live="polite">
+        <span class="sync-dot" id="sync-status-dot"></span>
+        <span class="sync-text" id="sync-status-text">Saved ✓</span>
+      </div>
+
+      <button type="button" class="btn btn--ghost topbar-btn" id="btn-pause-save" title="Pause & save your progress">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        <span>Pause &amp; save</span>
+      </button>
+
+      <button type="button" class="btn btn--outline topbar-btn topbar-btn--tutor" id="btn-topbar-tutor" title="Ask Socratic AI Tutor">
+        <span class="tutor-sparkle" aria-hidden="true">✨</span>
+        <span>AI Tutor</span>
+      </button>
+
+      <!-- User Menu -->
+      <div class="topbar-user-wrap">
+        <button type="button" class="topbar-user-btn" id="btn-topbar-user" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+          <div class="topbar-avatar" id="topbar-user-avatar">AL</div>
+          <svg class="topbar-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4.5l3.5 3.5 3.5-3.5"/></svg>
+        </button>
+        <div class="topbar-user-dropdown" id="topbar-user-dropdown" hidden>
+          <div class="topbar-dropdown-header">
+            <strong id="dropdown-user-name">Ada Lovelace</strong>
+            <span class="dropdown-user-level" id="dropdown-user-level">Beginner</span>
+          </div>
+          <div class="topbar-dropdown-divider"></div>
+          <a href="#/journey" class="topbar-dropdown-item" id="menu-item-journey">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Your Journey</span>
+          </a>
+          <a href="#/progress" class="topbar-dropdown-item" id="menu-item-progress">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+            <span>Progress &amp; Stamps</span>
+          </a>
+          <a href="#/settings" class="topbar-dropdown-item" id="menu-item-settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span>
+          </a>
+          <button type="button" class="topbar-dropdown-item btn-change-level" id="menu-item-change-level">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Change Level</span>
+          </button>
+          <div class="topbar-dropdown-divider"></div>
+          <button type="button" class="topbar-dropdown-item topbar-dropdown-item--danger" id="menu-item-signout">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SINGLE PAGE ROOT CONTAINER -->
+  <main id="page-root" class="page-root" role="main" tabindex="-1"></main>
 
   <!-- ════════════════════════════════════════════════════════
        AUTH VIEW
@@ -269,6 +362,155 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════
+       ONBOARDING VIEW — Level picker + placement check
+  ═════════════════════════════════════════════════════════ -->
+  <div id="view-onboarding" class="view view--onboarding" aria-label="Onboarding" hidden>
+
+    <div class="ob-card" role="main">
+
+      <!-- Shared logo row -->
+      <div class="ob-logo" aria-hidden="true">
+        <div class="ob-logo-mark">
+          <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="13" stroke="#5FAB7A" stroke-width="1.5"/>
+            <path d="M14 6v16M8 10l6-4 6 4M9 16l5-4 5 4M10 22l4-4 4 4" stroke="#5FAB7A" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="ob-logo-word">Concept Deep‑Dive</span>
+      </div>
+
+      <!-- ── STEP 1: Level picker ─────────────────────────── -->
+      <div class="ob-step ob-step--active" id="ob-step-level" aria-label="Choose your level">
+
+        <h1 class="ob-heading">Where are you starting from?</h1>
+        <p class="ob-subheading">We'll tailor the learning path to your current level.</p>
+
+        <div class="ob-level-grid" role="radiogroup" aria-label="Learning level">
+
+          <button class="ob-level-card" id="ob-card-beginner"
+                  role="radio" aria-checked="false"
+                  aria-describedby="ob-desc-beginner">
+            <span class="ob-level-icon" aria-hidden="true">🌱</span>
+            <div class="ob-level-text">
+              <span class="ob-level-title">Beginner</span>
+              <span class="ob-level-desc" id="ob-desc-beginner">New to trees. Start from the basics.</span>
+            </div>
+            <span class="ob-level-radio" aria-hidden="true"></span>
+          </button>
+
+          <button class="ob-level-card" id="ob-card-intermediate"
+                  role="radio" aria-checked="false"
+                  aria-describedby="ob-desc-intermediate">
+            <span class="ob-level-icon" aria-hidden="true">🌿</span>
+            <div class="ob-level-text">
+              <span class="ob-level-title">Intermediate</span>
+              <span class="ob-level-desc" id="ob-desc-intermediate">I know the basics. Take me deeper.</span>
+            </div>
+            <span class="ob-level-radio" aria-hidden="true"></span>
+          </button>
+
+          <button class="ob-level-card" id="ob-card-revision"
+                  role="radio" aria-checked="false"
+                  aria-describedby="ob-desc-revision">
+            <span class="ob-level-icon" aria-hidden="true">🌳</span>
+            <div class="ob-level-text">
+              <span class="ob-level-title">Just revising</span>
+              <span class="ob-level-desc" id="ob-desc-revision">I've learned this before. Quick refresher.</span>
+            </div>
+            <span class="ob-level-radio" aria-hidden="true"></span>
+          </button>
+
+        </div>
+
+        <div class="ob-actions">
+          <button class="ob-btn-primary" id="ob-btn-continue" disabled aria-disabled="true">
+            Continue
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h8M7 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="ob-btn-skip" id="ob-btn-skip-step1" type="button" style="display:none;">
+            Skip check & start path →
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ── STEP 2: Placement quiz ───────────────────────── -->
+      <div class="ob-step" id="ob-step-quiz" aria-label="Placement check" aria-live="polite">
+
+        <p class="ob-subheading" style="margin-bottom:var(--sp-5)">
+          Quick check so we can tailor your path
+          <span style="color:var(--cream-3)">(about 3 minutes)</span>
+        </p>
+
+        <div class="ob-q-counter" id="ob-q-counter" aria-live="polite">
+          <div class="ob-progress-dots" aria-hidden="true">
+            <span class="ob-dot ob-dot--active"></span>
+            <span class="ob-dot"></span>
+            <span class="ob-dot"></span>
+          </div>
+          <span class="ob-counter-text">Question 1 of 3</span>
+        </div>
+
+        <p class="ob-question" id="ob-q-text"></p>
+
+        <textarea
+          class="ob-answer-textarea"
+          id="ob-q-answer"
+          rows="5"
+          placeholder="Type your answer here…"
+          aria-label="Your answer"
+        ></textarea>
+
+        <!-- Inline feedback -->
+        <div class="ob-feedback" id="ob-feedback" aria-live="polite">
+          <div class="ob-feedback-badge" id="ob-feedback-badge"></div>
+          <span id="ob-feedback-text"></span>
+        </div>
+
+        <div class="ob-actions">
+          <button class="ob-btn-primary" id="ob-btn-submit-q" disabled aria-disabled="true">
+            Submit answer
+          </button>
+          <button class="ob-btn-skip" id="ob-btn-skip" type="button">
+            Skip the check
+          </button>
+          <button class="ob-btn-skip" id="ob-btn-back-level" type="button" title="Go back to choose another level" style="margin-left:auto;">
+            ← Change level
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ── STEP 3: Done ─────────────────────────────────── -->
+      <div class="ob-step" id="ob-step-done" aria-label="All done" aria-live="polite">
+
+        <div style="text-align:center;margin-bottom:var(--sp-6)">
+          <div style="font-size:48px;margin-bottom:var(--sp-4)">🎯</div>
+          <h2 class="ob-heading" style="margin-bottom:var(--sp-2)">You're all set!</h2>
+          <p class="ob-subheading" style="margin-bottom:0">Your path has been personalised. Let's go.</p>
+        </div>
+
+        <!-- Level-reconciliation notice (shown only when level was adjusted) -->
+        <div class="ob-reconcile-notice" id="ob-reconcile-notice" role="status" aria-live="polite">
+          <span class="ob-reconcile-icon" aria-hidden="true">ℹ️</span>
+          <span id="ob-reconcile-msg"></span>
+        </div>
+
+        <div class="ob-actions" style="display:flex; flex-direction:column; gap:12px; align-items:stretch;">
+          <button class="ob-btn-primary" id="ob-btn-enter">
+            Go to my learning path
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h8M7 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="ob-btn-skip" id="ob-btn-change-level-done" type="button" style="text-align:center; width:100%;">
+            ← Choose a different level
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
        DASHBOARD VIEW
   ═════════════════════════════════════════════════════════ -->
   <div id="view-dashboard" class="view view--dashboard" aria-label="Learning Dashboard" hidden>
@@ -325,6 +567,7 @@
           <div class="user-avatar" aria-hidden="true" id="user-avatar-initials">AL</div>
           <div class="user-info">
             <span class="user-name" id="sidebar-user-name">Ada Lovelace</span>
+            <span class="ob-level-badge ob-sidebar-level-badge" id="sidebar-level-badge"></span>
           </div>
         </div>
         <button class="btn-icon" id="btn-logout" aria-label="Sign out" title="Sign out">
@@ -333,6 +576,10 @@
           </svg>
         </button>
       </div>
+      <button class="sidebar-change-level btn-change-level" id="btn-change-level-dash" title="Change level or restart your learning path">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 1v10M1 6l5-5 5 5"/></svg>
+        Change level / restart path
+      </button>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -358,8 +605,8 @@
           <div class="topic-stats">
             <div class="stat">
               <span class="stat-value" id="stat-completed">0</span>
-              <span class="stat-unit">/ 4</span>
-              <span class="stat-label">stages complete</span>
+              <span class="stat-unit" id="stat-total">/ 0</span>
+              <span class="stat-label">steps complete</span>
             </div>
             <div class="stat-divider" aria-hidden="true"></div>
             <div class="stat">
@@ -369,6 +616,7 @@
                   <circle class="ring-fill" cx="18" cy="18" r="15.9" id="progress-ring-fill"/>
                 </svg>
               </div>
+              <span class="stat-value" id="stat-percent">0%</span>
               <span class="stat-label">progress</span>
             </div>
           </div>
@@ -377,88 +625,11 @@
 
       <!-- LEARNING PATH -->
       <section class="learning-path" aria-label="Learning stages">
-        <div class="stages-container">
-
-          <!-- ── STAGE 1: FOUNDATIONS ── -->
-          <article class="stage-card" data-stage="0" data-status="not-started" aria-label="Stage 1: Foundations">
-            <div class="stage-rail" aria-hidden="true">
-              <div class="stage-node-ring">
-                <div class="stage-node-dot"></div>
-              </div>
-              <div class="stage-branch"></div>
-            </div>
-            <div class="stage-body">
-              <div class="stage-body-inner">
-                <div class="stage-header">
-                  <div class="stage-num-badge">01</div>
-                  <div class="stage-titles">
-                    <span class="stage-category">Foundations</span>
-                    <h2 class="stage-name">Theory &amp; Core Concepts</h2>
-                  </div>
-                  <div class="stage-status-group">
-                    <div class="stage-mastery-badge" id="mastery-badge-0" hidden>
-                      <span class="mastery-sparkle">✨</span>
-                      <span>Mastered</span>
-                    </div>
-                    <div class="stage-status-pill" aria-label="Not started">
-                      <span class="status-dot"></span>
-                      <span class="status-text">Not started</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-locked-overlay" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-                  <span>Complete previous stage first</span>
-                </div>
-
-                <div class="stage-content-area">
-                  <div class="stage-icon-wrap" aria-hidden="true">
-                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.3">
-                      <path d="M26 8v36M14 16l12-8 12 8M15 26l11-8 11 8M17 36l9-7 9 7" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="stage-text">
-                    <p class="stage-headline">The bedrock, before anything else</p>
-                    <p class="stage-description">Definitions of nodes, edges, depth, height, balance factors. The BST invariant. Tree traversals — in-order, pre-order, post-order — and why each matters. This section builds the mental model everything else rests on.</p>
-                    <div class="stage-tags">
-                      <span class="tag">Node structure</span>
-                      <span class="tag">BST invariant</span>
-                      <span class="tag">Traversal</span>
-                      <span class="tag">Height &amp; depth</span>
-                      <span class="tag">Balance factor</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-footer">
-                  <button class="btn btn--ghost stage-expand-btn" aria-expanded="false" data-stage="0">
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 5.5h11M2 9.5h11"/></svg>
-                    <span>Preview contents</span>
-                    <svg class="expand-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
-                  </button>
-                  <button class="btn btn--ghost stage-assessment-btn" aria-expanded="false" data-stage="0">
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-                    <span>Assessment</span>
-                  </button>
-                  <button class="btn btn--complete stage-mark-btn" data-stage="0" aria-label="Mark Foundations as complete">
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 7.5l3.5 3.5 6.5-6.5"/></svg>
-                    Mark complete
-                  </button>
-                </div>
-
-                <div class="stage-expanded-content stage-expanded-content--hidden">
-                  <div class="foundations-content">
-
-                    <!-- Header -->
-                    <div class="foundations-header">
-                      <span class="foundations-badge">Theory &amp; Core Concepts</span>
-                      <h3 class="foundations-title">The Bedrock, Before Anything Else</h3>
-                      <p class="foundations-intro">Every other stage — the lectures, books, and research papers — assumes you already have this mental model. These five concepts are the foundation everything else rests on.</p>
-                    </div>
-
-                    <!-- ── Section 1: Node structure ── -->
-                    <div class="found-section">
+        <!-- Hidden Foundations Section Template (rendered inside theory cards) -->
+        <template id="foundations-sections-template">
+          <div class="foundations-sections-catalog">
+            <!-- ── Section 1: Node structure ── -->
+                    <div class="found-section" id="found-sec-th-nodes">
                       <div class="found-section-label">
                         <span class="found-tag-dot"></span>
                         <span class="found-section-name">Node structure</span>
@@ -470,8 +641,8 @@
                       </div>
                     </div>
 
-                    <!-- ── Section 2: BST invariant ── -->
-                    <div class="found-section">
+            <!-- ── Section 2: BST invariant ── -->
+                    <div class="found-section" id="found-sec-th-invariant">
                       <div class="found-section-label">
                         <span class="found-tag-dot"></span>
                         <span class="found-section-name">BST invariant</span>
@@ -498,8 +669,8 @@
                       />
                     </div>
 
-                    <!-- ── Section 3: Height & depth ── -->
-                    <div class="found-section">
+            <!-- ── Section 3: Height & depth ── -->
+                    <div class="found-section" id="found-sec-th-height">
                       <div class="found-section-label">
                         <span class="found-tag-dot"></span>
                         <span class="found-section-name">Height &amp; depth</span>
@@ -521,8 +692,8 @@
                       />
                     </div>
 
-                    <!-- ── Section 4: Balance factor ── -->
-                    <div class="found-section">
+            <!-- ── Section 4: Balance factor ── -->
+                    <div class="found-section" id="found-sec-th-balance">
                       <div class="found-section-label">
                         <span class="found-tag-dot"></span>
                         <span class="found-section-name">Balance factor</span>
@@ -546,8 +717,8 @@
                       />
                     </div>
 
-                    <!-- ── Section 5: Traversal ── -->
-                    <div class="found-section">
+            <!-- ── Section 5: Traversal ── -->
+                    <div class="found-section" id="found-sec-th-traversal">
                       <div class="found-section-label">
                         <span class="found-tag-dot"></span>
                         <span class="found-section-name">Traversal</span>
@@ -619,691 +790,13 @@
                         <strong>Memory shortcut:</strong> The name (Pre / In / Post) tells you exactly when the <strong>root</strong> gets visited relative to its subtrees — Pre = before, In = in the middle, Post = after.
                       </div>
                     </div>
+          </div>
+        </template>
 
-                    <!-- Footer note -->
-                    <div class="found-footer-note">
-                      <p>Insertion, deletion, and self-balancing trees are really just applications of two ideas above: the <strong>BST invariant</strong> (to know <em>where</em> something goes) and <strong>traversal order</strong> (to know <em>how</em> to walk through and process what's there). Everything in Stages 2–4 assumes this mental model.</p>
-                    </div>
-
-                  </div>
-                </div>
-
-                <!-- STAGE 1 ASSESSMENT PANEL -->
-                <div class="stage-assessment-panel stage-assessment-panel--hidden" id="assessment-panel-0" data-stage="0">
-                  <div class="assessment-panel-inner">
-                    <div class="assessment-header">
-                      <span class="assessment-badge">Stage 1 Assessment</span>
-                      <h3 class="assessment-title">Test Conceptual Mastery</h3>
-                      <p class="assessment-subtitle">Answer in your own words. Gemini AI will evaluate your conceptual understanding and log any flagged gaps.</p>
-                    </div>
-                    <div class="assessment-question-box">
-                      <span class="question-icon">🎯</span>
-                      <p class="assessment-question-text">Explain in your own words why a Binary Search Tree's in-order traversal always returns values in sorted order.</p>
-                    </div>
-                    <form class="assessment-form" data-stage="0" novalidate>
-                      <label class="field-label" for="assessment-input-0">Your Open-Ended Answer</label>
-                      <textarea class="field-input assessment-textarea" id="assessment-input-0" placeholder="Type your detailed explanation here..." rows="4" required></textarea>
-                      <div class="assessment-actions">
-                        <button type="submit" class="btn btn--primary btn-submit-assessment" data-stage="0">
-                          <span>Submit Answer for Evaluation →</span>
-                        </button>
-                      </div>
-                    </form>
-                    <div class="assessment-feedback-container" id="assessment-feedback-0" hidden></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- ── STAGE 2: TOP LECTURES ── -->
-          <article class="stage-card" data-stage="1" data-status="locked" aria-label="Stage 2: Top Lectures">
-            <div class="stage-rail" aria-hidden="true">
-              <div class="stage-node-ring">
-                <div class="stage-node-dot"></div>
-              </div>
-              <div class="stage-branch"></div>
-            </div>
-            <div class="stage-body">
-              <div class="stage-body-inner">
-                <div class="stage-header">
-                  <div class="stage-num-badge">02</div>
-                  <div class="stage-titles">
-                    <span class="stage-category">Top Lectures</span>
-                    <h2 class="stage-name">University Lectures &amp; Talks</h2>
-                  </div>
-                  <div class="stage-status-group">
-                    <div class="stage-mastery-badge" id="mastery-badge-1" hidden>
-                      <span class="mastery-sparkle">✨</span>
-                      <span>Mastered</span>
-                    </div>
-                    <div class="stage-status-pill stage-status-pill--locked" aria-label="Locked">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5.5" rx="1"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-                      <span class="status-text">Locked</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-locked-overlay" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-                  <span>Complete Foundations first</span>
-                </div>
-
-                <div class="stage-content-area">
-                  <div class="stage-icon-wrap" aria-hidden="true">
-                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.3">
-                      <rect x="8" y="10" width="36" height="26" rx="3"/>
-                      <polygon points="20,18 34,26 20,34"/>
-                      <path d="M18 40h16"/>
-                    </svg>
-                  </div>
-                  <div class="stage-text">
-                    <p class="stage-headline">The best minds on this topic, curated</p>
-                    <p class="stage-description">Top 10 lectures — from MIT OpenCourseWare and NPTEL (IIT Delhi), plus widely-respected free educators. Ordered to build understanding step by step: fundamentals → traversals → core operations → deletion → advanced self-balancing trees.</p>
-                    <div class="stage-tags">
-                      <span class="tag">MIT 6.006</span>
-                      <span class="tag">NPTEL IIT Delhi</span>
-                      <span class="tag">10 lectures</span>
-                      <span class="tag">Ordered by topic</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-footer">
-                  <button class="btn btn--ghost stage-expand-btn" aria-expanded="false" data-stage="1" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 5.5h11M2 9.5h11"/></svg>
-                    <span>Preview contents</span>
-                    <svg class="expand-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
-                  </button>
-                  <button class="btn btn--ghost stage-assessment-btn" aria-expanded="false" data-stage="1" disabled>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-                    <span>Assessment</span>
-                  </button>
-                  <button class="btn btn--complete stage-mark-btn" data-stage="1" aria-label="Mark Lectures as complete" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 7.5l3.5 3.5 6.5-6.5"/></svg>
-                    Mark complete
-                  </button>
-                </div>
-
-                <div class="stage-expanded-content stage-expanded-content--hidden">
-                  <div class="expanded-inner lecture-curriculum">
-                    <div class="lecture-curriculum-header">
-                      <span class="curriculum-badge">Curated Curriculum</span>
-                      <h3 class="curriculum-title">Top 10 Lectures: Step-by-Step Mastery</h3>
-                      <p class="curriculum-subtitle">Follow these 10 authoritative lectures in sequence to build deep conceptual intuition and formal algorithmic rigor.</p>
-                    </div>
-
-                    <!-- Section 1 — Tree Fundamentals -->
-                    <div class="lecture-section">
-                      <div class="lecture-section-header">
-                        <div class="lecture-section-pill">Module 1</div>
-                        <h4 class="lecture-section-title">Section 1 — Tree Fundamentals</h4>
-                      </div>
-                      <div class="lecture-list">
-                        <!-- Lecture 1 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">01</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">NPTEL IIT Delhi</span>
-                              <span class="lecture-type">Video Lecture</span>
-                            </div>
-                            <a href="https://www.youtube.com/watch?v=tORLeHHtazM" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">NPTEL — Lecture 6: Trees (Dr. Naveen Garg, IIT Delhi)</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">What a tree is, basic terminology — the true starting point</p>
-                          </div>
-                          <a href="https://www.youtube.com/watch?v=tORLeHHtazM" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Watch Lecture 1 on YouTube">Watch ↗</a>
-                        </div>
-
-                        <!-- Lecture 2 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">02</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">MIT 6.006</span>
-                              <span class="lecture-type">Playlist</span>
-                            </div>
-                            <a href="https://www.youtube.com/playlist?list=PLUl4u3cNGP63EdVPNLG3ToM6LaEUuStEY" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">MIT 6.006 (2020) — Lecture 6: Binary Trees, Part 1</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Full binary tree structure, pointer-based implementation</p>
-                          </div>
-                          <a href="https://www.youtube.com/playlist?list=PLUl4u3cNGP63EdVPNLG3ToM6LaEUuStEY" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Watch Lecture 2 on YouTube">Watch ↗</a>
-                        </div>
-
-                        <!-- Lecture 3 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">03</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">mycodeschool</span>
-                              <span class="lecture-type">YouTube Search</span>
-                            </div>
-                            <a href="https://www.youtube.com/results?search_query=mycodeschool+binary+search+tree" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">mycodeschool — Binary Search Tree Introduction</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Visual, beginner-friendly intro to what makes a tree a BST</p>
-                          </div>
-                          <a href="https://www.youtube.com/results?search_query=mycodeschool+binary+search+tree" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Search Lecture 3 on YouTube">Search ↗</a>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Section 2 — Traversals -->
-                    <div class="lecture-section">
-                      <div class="lecture-section-header">
-                        <div class="lecture-section-pill">Module 2</div>
-                        <h4 class="lecture-section-title">Section 2 — Traversals</h4>
-                      </div>
-                      <div class="lecture-list">
-                        <!-- Lecture 4 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">04</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">NPTEL</span>
-                              <span class="lecture-type">Course Archive</span>
-                            </div>
-                            <a href="https://nptel.ac.in/courses/106102064" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">NPTEL — Lecture 7: Tree Walks / Traversals</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">In-order, pre-order, post-order — matches your Foundations content</p>
-                          </div>
-                          <a href="https://nptel.ac.in/courses/106102064" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="View Lecture 4 on NPTEL">Open ↗</a>
-                        </div>
-
-                        <!-- Lecture 5 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">05</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">Abdul Bari</span>
-                              <span class="lecture-type">YouTube Search</span>
-                            </div>
-                            <a href="https://www.youtube.com/results?search_query=Abdul+Bari+Binary+Search+Tree" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">Abdul Bari — Binary Search Tree</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Traversal logic explained with exceptional clarity</p>
-                          </div>
-                          <a href="https://www.youtube.com/results?search_query=Abdul+Bari+Binary+Search+Tree" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Search Lecture 5 on YouTube">Search ↗</a>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Section 3 — Core BST Operations -->
-                    <div class="lecture-section">
-                      <div class="lecture-section-header">
-                        <div class="lecture-section-pill">Module 3</div>
-                        <h4 class="lecture-section-title">Section 3 — Core BST Operations</h4>
-                      </div>
-                      <div class="lecture-list">
-                        <!-- Lecture 6 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">06</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">MIT 6.006</span>
-                              <span class="lecture-type">MIT OCW Video</span>
-                            </div>
-                            <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-006-introduction-to-algorithms-fall-2011/lecture-videos/lecture-5-binary-search-trees-bst-sort/" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">MIT 6.006 — Lecture 5: Binary Search Trees, BST Sort</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">BST introduction, insertion, search, finding min/max</p>
-                          </div>
-                          <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-006-introduction-to-algorithms-fall-2011/lecture-videos/lecture-5-binary-search-trees-bst-sort/" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Watch Lecture 6 on MIT OCW">Watch ↗</a>
-                        </div>
-
-                        <!-- Lecture 7 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">07</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">freeCodeCamp</span>
-                              <span class="lecture-type">YouTube Search</span>
-                            </div>
-                            <a href="https://www.youtube.com/results?search_query=freeCodeCamp+data+structures+course+trees" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">freeCodeCamp — Data Structures Full Course (Tree section)</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Hands-on coded implementation of core BST operations</p>
-                          </div>
-                          <a href="https://www.youtube.com/results?search_query=freeCodeCamp+data+structures+course+trees" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Search Lecture 7 on YouTube">Search ↗</a>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Section 4 — Deletion Logic -->
-                    <div class="lecture-section">
-                      <div class="lecture-section-header">
-                        <div class="lecture-section-pill">Module 4</div>
-                        <h4 class="lecture-section-title">Section 4 — Deletion Logic</h4>
-                      </div>
-                      <div class="lecture-list">
-                        <!-- Lecture 8 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">08</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">NPTEL</span>
-                              <span class="lecture-type">YouTube Search</span>
-                            </div>
-                            <a href="https://www.youtube.com/results?search_query=NPTEL+Data+Structures+Algorithms+Naveen+Garg+Lecture+17" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">NPTEL — Lecture 17: BST Deletion Logic</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">BST deletion, successor/predecessor logic — the trickiest operation</p>
-                          </div>
-                          <a href="https://www.youtube.com/results?search_query=NPTEL+Data+Structures+Algorithms+Naveen+Garg+Lecture+17" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Search Lecture 8 on YouTube">Search ↗</a>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Section 5 — Advanced / Self-Balancing -->
-                    <div class="lecture-section">
-                      <div class="lecture-section-header">
-                        <div class="lecture-section-pill">Module 5</div>
-                        <h4 class="lecture-section-title">Section 5 — Advanced / Self-Balancing</h4>
-                      </div>
-                      <div class="lecture-list">
-                        <!-- Lecture 9 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">09</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">MIT 6.006</span>
-                              <span class="lecture-type">MIT OCW Video</span>
-                            </div>
-                            <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-videos/" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">MIT 6.006 — Lecture 6: AVL Trees, AVL Sort</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Why plain BSTs degrade, how AVL trees self-balance via rotations</p>
-                          </div>
-                          <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-videos/" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Watch Lecture 9 on MIT OCW">Watch ↗</a>
-                        </div>
-
-                        <!-- Lecture 10 -->
-                        <div class="lecture-card">
-                          <div class="lecture-num">10</div>
-                          <div class="lecture-info">
-                            <div class="lecture-meta">
-                              <span class="lecture-source">MIT OCW</span>
-                              <span class="lecture-type">Video Archive</span>
-                            </div>
-                            <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/video_galleries/lecture-videos/" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                              <span class="lecture-title">MIT OCW 6.006 Full Lecture Video Archive</span>
-                              <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                            </a>
-                            <p class="lecture-desc">Reference hub covering advanced tree topics</p>
-                          </div>
-                          <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/video_galleries/lecture-videos/" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="Open Lecture Archive">Archive ↗</a>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                <!-- STAGE 2 ASSESSMENT PANEL -->
-                <div class="stage-assessment-panel stage-assessment-panel--hidden" id="assessment-panel-1" data-stage="1">
-                  <div class="assessment-panel-inner">
-                    <div class="assessment-header">
-                      <span class="assessment-badge">Stage 2 Assessment</span>
-                      <h3 class="assessment-title">Test Conceptual Mastery</h3>
-                      <p class="assessment-subtitle">Answer in your own words. Gemini AI will evaluate your conceptual understanding and log any flagged gaps.</p>
-                    </div>
-                    <div class="assessment-question-box">
-                      <span class="question-icon">🎯</span>
-                      <p class="assessment-question-text">Why is tree height critical for operation runtime, and what structural condition causes a BST to degenerate into a linked list?</p>
-                    </div>
-                    <form class="assessment-form" data-stage="1" novalidate>
-                      <label class="field-label" for="assessment-input-1">Your Open-Ended Answer</label>
-                      <textarea class="field-input assessment-textarea" id="assessment-input-1" placeholder="Type your detailed explanation here..." rows="4" required></textarea>
-                      <div class="assessment-actions">
-                        <button type="submit" class="btn btn--primary btn-submit-assessment" data-stage="1">
-                          <span>Submit Answer for Evaluation →</span>
-                        </button>
-                      </div>
-                    </form>
-                    <div class="assessment-feedback-container" id="assessment-feedback-1" hidden></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- ── STAGE 3: BEST BOOKS ── -->
-          <article class="stage-card" data-stage="2" data-status="locked" aria-label="Stage 3: Best Books">
-            <div class="stage-rail" aria-hidden="true">
-              <div class="stage-node-ring">
-                <div class="stage-node-dot"></div>
-              </div>
-              <div class="stage-branch"></div>
-            </div>
-            <div class="stage-body">
-              <div class="stage-body-inner">
-                <div class="stage-header">
-                  <div class="stage-num-badge">03</div>
-                  <div class="stage-titles">
-                    <span class="stage-category">Best Books</span>
-                    <h2 class="stage-name">Essential Reading &amp; Excerpts</h2>
-                  </div>
-                  <div class="stage-status-group">
-                    <div class="stage-mastery-badge" id="mastery-badge-2" hidden>
-                      <span class="mastery-sparkle">✨</span>
-                      <span>Mastered</span>
-                    </div>
-                    <div class="stage-status-pill stage-status-pill--locked" aria-label="Locked">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5.5" rx="1"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-                      <span class="status-text">Locked</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-locked-overlay" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-                  <span>Complete Lectures first</span>
-                </div>
-
-                <div class="stage-content-area">
-                  <div class="stage-icon-wrap" aria-hidden="true">
-                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.3">
-                      <path d="M10 8h22l10 10v26H10V8z"/>
-                      <path d="M32 8v10h10"/>
-                      <path d="M18 22h16M18 29h16M18 36h10"/>
-                    </svg>
-                  </div>
-                  <div class="stage-text">
-                    <p class="stage-headline">3 books that actually go deep</p>
-                    <p class="stage-description">Not a reading list — a selection. CLRS for the rigorous, most-respected treatment. Jay Wengrow's guide for building intuition before tackling CLRS. A language-specific implementation book for students who learn best from working code alongside theory.</p>
-                    <div class="stage-tags">
-                      <span class="tag">CLRS</span>
-                      <span class="tag">Wengrow</span>
-                      <span class="tag">Excerpts</span>
-                      <span class="tag">Chapter maps</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-footer">
-                  <button class="btn btn--ghost stage-expand-btn" aria-expanded="false" data-stage="2" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 5.5h11M2 9.5h11"/></svg>
-                    <span>Preview contents</span>
-                    <svg class="expand-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
-                  </button>
-                  <button class="btn btn--ghost stage-assessment-btn" aria-expanded="false" data-stage="2" disabled>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-                    <span>Assessment</span>
-                  </button>
-                  <button class="btn btn--complete stage-mark-btn" data-stage="2" aria-label="Mark Books as complete" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 7.5l3.5 3.5 6.5-6.5"/></svg>
-                    Mark complete
-                  </button>
-                </div>
-
-                <div class="stage-expanded-content stage-expanded-content--hidden">
-                  <div class="expanded-inner lecture-curriculum">
-                    <div class="lecture-curriculum-header">
-                      <span class="curriculum-badge">Curated Reading List</span>
-                      <h3 class="curriculum-title">3 Books: Theory to Implementation</h3>
-                      <p class="curriculum-subtitle">Three books selected to complement each other — start with Wengrow to build intuition, use CLRS for rigour, and Goodrich/Tamassia for end-to-end code.</p>
-                    </div>
-
-                    <!-- Book 1: CLRS -->
-                    <div class="book-card">
-                      <div class="book-num">01</div>
-                      <div class="book-info">
-                        <div class="book-meta">
-                          <span class="book-label book-label--gold">Gold Standard</span>
-                          <span class="book-type">Textbook · 4th Edition (2022)</span>
-                        </div>
-                        <a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                          <span class="lecture-title">Introduction to Algorithms (CLRS)</span>
-                          <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                        </a>
-                        <p class="book-authors">Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein</p>
-                        <p class="lecture-desc">The gold standard — most rigorous, mathematically precise treatment of BSTs, red-black trees, and tree algorithms. Best for interview prep and genuine deep understanding.</p>
-                        <div class="book-tags-row">
-                          <span class="book-tag book-tag--green">Best for: Rigorous, exam/interview-level understanding</span>
-                          <span class="book-tag book-tag--amber">Note: Dense — not the easiest first read, but the most respected</span>
-                        </div>
-                      </div>
-                      <a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="View CLRS on MIT Press">View ↗</a>
-                    </div>
-
-                    <!-- Book 2: Wengrow -->
-                    <div class="book-card">
-                      <div class="book-num">02</div>
-                      <div class="book-info">
-                        <div class="book-meta">
-                          <span class="book-label book-label--blue">Start Here</span>
-                          <span class="book-type">Practical Guide · 2nd Edition (2020)</span>
-                        </div>
-                        <a href="https://pragprog.com/titles/jwdsal2/a-common-sense-guide-to-data-structures-and-algorithms-second-edition/" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                          <span class="lecture-title">A Common-Sense Guide to Data Structures and Algorithms</span>
-                          <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                        </a>
-                        <p class="book-authors">Jay Wengrow</p>
-                        <p class="lecture-desc">Practical, example-driven, avoids abstract-only explanations. Covers trees clearly with accessible code examples. Good complement to CLRS's density.</p>
-                        <div class="book-tags-row">
-                          <span class="book-tag book-tag--green">Best for: Building intuition before tackling CLRS</span>
-                          <span class="book-tag book-tag--amber">Note: Not a substitute for CLRS's rigor, but much easier to start with</span>
-                        </div>
-                      </div>
-                      <a href="https://pragprog.com/titles/jwdsal2/a-common-sense-guide-to-data-structures-and-algorithms-second-edition/" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="View Wengrow on Pragmatic Bookshelf">View ↗</a>
-                    </div>
-
-                    <!-- Book 3: Goodrich / Tamassia -->
-                    <div class="book-card">
-                      <div class="book-num">03</div>
-                      <div class="book-info">
-                        <div class="book-meta">
-                          <span class="book-label book-label--purple">Code-First</span>
-                          <span class="book-type">Textbook · Java or Python edition</span>
-                        </div>
-                        <a href="https://www.wiley.com/en-us/Data+Structures+and+Algorithms+in+Java%2C+6th+Edition-p-9781118771334" target="_blank" rel="noopener noreferrer" class="lecture-title-link">
-                          <span class="lecture-title">Data Structures and Algorithms in Java / Python</span>
-                          <svg class="external-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h7v7M13 3L6 10"/></svg>
-                        </a>
-                        <p class="book-authors">Michael T. Goodrich, Roberto Tamassia (+ Michael H. Goldwasser for Python)</p>
-                        <p class="lecture-desc">Strong balance of theory + actual implementation code, useful for students who want to see BSTs coded end-to-end. Pick the Java or Python edition based on your team's primary language.</p>
-                        <div class="book-tags-row">
-                          <span class="book-tag book-tag--green">Best for: Students who learn better by reading working code alongside theory</span>
-                        </div>
-                      </div>
-                      <a href="https://www.wiley.com/en-us/Data+Structures+and+Algorithms+in+Java%2C+6th+Edition-p-9781118771334" target="_blank" rel="noopener noreferrer" class="btn btn--ghost lecture-action-btn" aria-label="View Goodrich on Wiley">View ↗</a>
-                    </div>
-
-                  </div>
-                </div>
-
-                <!-- STAGE 3 ASSESSMENT PANEL -->
-                <div class="stage-assessment-panel stage-assessment-panel--hidden" id="assessment-panel-2" data-stage="2">
-                  <div class="assessment-panel-inner">
-                    <div class="assessment-header">
-                      <span class="assessment-badge">Stage 3 Assessment</span>
-                      <h3 class="assessment-title">Test Conceptual Mastery</h3>
-                      <p class="assessment-subtitle">Answer in your own words. Gemini AI will evaluate your conceptual understanding and log any flagged gaps.</p>
-                    </div>
-                    <div class="assessment-question-box">
-                      <span class="question-icon">🎯</span>
-                      <p class="assessment-question-text">When deleting a BST node with two children, why is replacing it with its in-order successor necessary to maintain the BST invariant?</p>
-                    </div>
-                    <form class="assessment-form" data-stage="2" novalidate>
-                      <label class="field-label" for="assessment-input-2">Your Open-Ended Answer</label>
-                      <textarea class="field-input assessment-textarea" id="assessment-input-2" placeholder="Type your detailed explanation here..." rows="4" required></textarea>
-                      <div class="assessment-actions">
-                        <button type="submit" class="btn btn--primary btn-submit-assessment" data-stage="2">
-                          <span>Submit Answer for Evaluation →</span>
-                        </button>
-                      </div>
-                    </form>
-                    <div class="assessment-feedback-container" id="assessment-feedback-2" hidden></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- ── STAGE 4: RESEARCH ── -->
-          <article class="stage-card" data-stage="3" data-status="locked" aria-label="Stage 4: Research & Journals">
-            <div class="stage-rail" aria-hidden="true">
-              <div class="stage-node-ring">
-                <div class="stage-node-dot"></div>
-              </div>
-              <!-- No branch below last node -->
-            </div>
-            <div class="stage-body">
-              <div class="stage-body-inner">
-                <div class="stage-header">
-                  <div class="stage-num-badge">04</div>
-                  <div class="stage-titles">
-                    <span class="stage-category">Research &amp; Journals</span>
-                    <h2 class="stage-name">Papers &amp; Deeper Reading</h2>
-                  </div>
-                  <div class="stage-status-group">
-                    <div class="stage-mastery-badge" id="mastery-badge-3" hidden>
-                      <span class="mastery-sparkle">✨</span>
-                      <span>Mastered</span>
-                    </div>
-                    <div class="stage-status-pill stage-status-pill--locked" aria-label="Locked">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5.5" rx="1"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-                      <span class="status-text">Locked</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-locked-overlay" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-                  <span>Complete Books first</span>
-                </div>
-
-                <div class="stage-content-area">
-                  <div class="stage-icon-wrap" aria-hidden="true">
-                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.3">
-                      <circle cx="26" cy="26" r="18"/>
-                      <path d="M26 10v16l8 8" stroke-linecap="round"/>
-                      <path d="M16 26h4M32 26h4M26 16v4M26 32v4" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="stage-text">
-                    <p class="stage-headline">Where the field was actually built</p>
-                    <p class="stage-description">5 real papers on self-balancing trees and their real-world applications — from theoretical comparisons of AVL vs Red-Black trees to how these structures power modern hardware and machine learning systems. Abstracts and reading notes included.</p>
-                    <div class="stage-tags">
-                      <span class="tag">AVL vs Red-Black</span>
-                      <span class="tag">NVRAM</span>
-                      <span class="tag">Survey</span>
-                      <span class="tag">ML Applications</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="stage-footer">
-                  <button class="btn btn--ghost stage-expand-btn" aria-expanded="false" data-stage="3" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 5.5h11M2 9.5h11"/></svg>
-                    <span>Preview contents</span>
-                    <svg class="expand-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
-                  </button>
-                  <button class="btn btn--ghost stage-assessment-btn" aria-expanded="false" data-stage="3" disabled>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
-                    <span>Assessment</span>
-                  </button>
-                  <button class="btn btn--complete stage-mark-btn" data-stage="3" aria-label="Mark Research as complete" disabled>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 7.5l3.5 3.5 6.5-6.5"/></svg>
-                    Mark complete
-                  </button>
-                </div>
-
-                <div class="stage-expanded-content stage-expanded-content--hidden">
-                  <div class="expanded-inner">
-                    <ol class="paper-list">
-
-                      <li class="paper-item">
-                        <div class="paper-header">
-                          <a class="paper-title" href="https://www.math.nagoya-u.ac.jp/~richard/teaching/s2024/SML_Liu_2.pdf" target="_blank" rel="noopener noreferrer">A Comparative Analysis of Self-Balancing Binary Search Trees</a>
-                          <span class="paper-badge">PDF</span>
-                        </div>
-                        <p class="paper-covers"><strong>Covers:</strong> Direct comparison of AVL Trees vs Red-Black Trees — balance factor logic, rotation costs, why Red-Black Trees are often preferred in production.</p>
-                        <p class="paper-why"><strong>Why it matters:</strong> Directly answers "why self-balancing trees extend basic BST principles" — the core question of this stage's assessment.</p>
-                      </li>
-
-                      <li class="paper-item">
-                        <div class="paper-header">
-                          <a class="paper-title" href="https://arxiv.org/pdf/2006.16284" target="_blank" rel="noopener noreferrer">Transactions on Red-Black and AVL Trees in NVRAM</a>
-                          <span class="paper-badge">arXiv</span>
-                        </div>
-                        <p class="paper-covers"><strong>Covers:</strong> Formal Red-Black Tree properties (coloring rules, violations) plus real-world use in non-volatile memory hardware.</p>
-                        <p class="paper-why"><strong>Why it matters:</strong> Bridges theory with a genuine modern hardware application — shows these structures live in real systems.</p>
-                      </li>
-
-                      <li class="paper-item">
-                        <div class="paper-header">
-                          <a class="paper-title" href="https://www.researchgate.net/publication/357983864_A_Survey_on_Balanced_Binary_Search_Trees_methods" target="_blank" rel="noopener noreferrer">A Survey on Balanced Binary Search Trees Methods</a>
-                          <span class="paper-badge">ResearchGate</span>
-                        </div>
-                        <p class="paper-covers"><strong>Covers:</strong> Broad survey touching AVL, Red-Black trees, Merkle trees, and automotive software applications.</p>
-                        <p class="paper-why"><strong>Why it matters:</strong> Shows the breadth of the field — not just one narrow technique but a whole ecosystem of balanced tree variants.</p>
-                        <p class="paper-note"><em>Note: full text may require a ResearchGate access request.</em></p>
-                      </li>
-
-                      <li class="paper-item">
-                        <div class="paper-header">
-                          <a class="paper-title" href="https://www.researchgate.net/publication/324062356_AVL_and_Red_Black_tree_as_a_single_balanced_tree" target="_blank" rel="noopener noreferrer">AVL and Red-Black Tree as a Single Balanced Tree</a>
-                          <span class="paper-badge">ResearchGate</span>
-                        </div>
-                        <p class="paper-covers"><strong>Covers:</strong> A novel proposal unifying AVL and Red-Black tree logic into one adaptable structure.</p>
-                        <p class="paper-why"><strong>Why it matters:</strong> Shows trees are still an active research area — not a "solved" topic frozen in the 1960s.</p>
-                      </li>
-
-                      <li class="paper-item">
-                        <div class="paper-header">
-                          <a class="paper-title" href="https://arxiv.org/pdf/2112.06160" target="_blank" rel="noopener noreferrer">Maintaining AUC and H-measure over Time</a>
-                          <span class="paper-badge">arXiv</span>
-                        </div>
-                        <p class="paper-covers"><strong>Covers:</strong> Uses self-balancing search trees as infrastructure for a real machine-learning application — tracking model performance metrics over time.</p>
-                        <p class="paper-why"><strong>Why it matters:</strong> Strong real-world relevance — BSTs underpin real ML systems, not just CS textbooks.</p>
-                      </li>
-
-                    </ol>
-                  </div>
-                </div>
-
-                <!-- STAGE 4 ASSESSMENT PANEL -->
-                <div class="stage-assessment-panel stage-assessment-panel--hidden" id="assessment-panel-3" data-stage="3">
-                  <div class="assessment-panel-inner">
-                    <div class="assessment-header">
-                      <span class="assessment-badge">Stage 4 Assessment</span>
-                      <h3 class="assessment-title">Test Conceptual Mastery</h3>
-                      <p class="assessment-subtitle">Answer in your own words. Gemini AI will evaluate your conceptual understanding and log any flagged gaps.</p>
-                    </div>
-                    <div class="assessment-question-box">
-                      <span class="question-icon">🎯</span>
-                      <p class="assessment-question-text">How do self-balancing trees (like AVL or Red-Black trees) extend basic BST principles to guarantee O(log n) operations in the worst case?</p>
-                    </div>
-                    <form class="assessment-form" data-stage="3" novalidate>
-                      <label class="field-label" for="assessment-input-3">Your Open-Ended Answer</label>
-                      <textarea class="field-input assessment-textarea" id="assessment-input-3" placeholder="Type your detailed explanation here..." rows="4" required></textarea>
-                      <div class="assessment-actions">
-                        <button type="submit" class="btn btn--primary btn-submit-assessment" data-stage="3">
-                          <span>Submit Answer for Evaluation →</span>
-                        </button>
-                      </div>
-                    </form>
-                    <div class="assessment-feedback-container" id="assessment-feedback-3" hidden></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-        </div><!-- /stages-container -->
+        <!-- Vertical Timeline Roadmap (One-by-One UI) -->
+        <div class="roadmap-timeline" id="roadmap-timeline" role="list" aria-label="Learning Roadmap Steps">
+          <!-- Dynamically populated by Roadmap.render() in js/roadmap.js -->
+        </div>
       </section>
 
       <!-- ALL-COMPLETE CTA -->
@@ -1368,12 +861,17 @@
           <div class="user-avatar" aria-hidden="true" id="synth-user-avatar">AL</div>
           <div class="user-info">
             <span class="user-name" id="synth-user-name">Ada Lovelace</span>
+            <span class="ob-level-badge ob-sidebar-level-badge" id="synth-level-badge"></span>
           </div>
         </div>
         <button class="btn-icon" id="btn-logout-synth" aria-label="Sign out" title="Sign out">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 2H2v12h4M11 5l3 3-3 3M14 8H6"/></svg>
         </button>
       </div>
+      <button class="sidebar-change-level btn-change-level" id="btn-change-level-synth" title="Change level or restart your learning path">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 1v10M1 6l5-5 5 5"/></svg>
+        Change level / restart path
+      </button>
     </aside>
 
     <!-- SYNTHESIS MAIN -->
@@ -1418,149 +916,102 @@
             <h2 class="synth-section-title">Visualizations &amp; Animations</h2>
             <p class="synth-section-subtitle">Animated walkthroughs of core BST operations — built to make the abstract concrete.</p>
           </div>
-          <button
-            type="button"
-            class="btn btn--ghost btn-sm anim-watched-btn"
-            id="btn-mark-animations-watched"
-            aria-pressed="false"
-            title="Mark all animations as viewed to count toward your 100% mastery"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" class="anim-watched-icon">
-              <path d="M2.5 7l3 3 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="anim-watched-label">Mark as viewed</span>
-          </button>
         </div>
 
-        <div class="anim-grid">
-          <div class="anim-card">
-            <div class="anim-preview" aria-hidden="true">
-              <svg viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="60" cy="15" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="60" y="19" text-anchor="middle" fill="#5FAB7A" font-size="9" font-family="Inter">50</text>
-                <circle cx="30" cy="48" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="30" y="52" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">25</text>
-                <circle cx="90" cy="48" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="90" y="52" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">75</text>
-                <circle cx="15" cy="78" r="10" stroke="#2E2920" fill="#181510"/>
-                <text x="15" y="82" text-anchor="middle" fill="#4A4540" font-size="9" font-family="Inter">10</text>
-                <circle cx="45" cy="78" r="10" stroke="#2E2920" fill="#181510"/>
-                <text x="45" y="82" text-anchor="middle" fill="#4A4540" font-size="9" font-family="Inter">35</text>
-                <line x1="52" y1="23" x2="38" y2="40" stroke="#3D7A55"/>
-                <line x1="68" y1="23" x2="82" y2="40" stroke="#3D7A55"/>
-                <line x1="22" y1="56" x2="23" y2="68" stroke="#2E2920"/>
-                <line x1="38" y1="56" x2="37" y2="68" stroke="#2E2920"/>
-                <path d="M10 78 Q10 88 20 88 Q30 88 30 78" stroke="#5FAB7A" stroke-dasharray="3,2" fill="none"/>
-              </svg>
+        <!-- Video player cards — rendered/managed by synthesis.js VideoPlayer module -->
+        <div class="video-sequence" id="video-sequence">
+
+          <!-- VIDEO 1 -->
+          <div class="video-card" id="video-card-1" data-video-index="1">
+            <div class="video-card-header">
+              <span class="video-num-badge">01</span>
+              <div class="video-card-info">
+                <strong class="video-card-title">Part 1: Foundations &amp; Traversals</strong>
+                <p class="video-card-desc">Nodes, the BST invariant, height, balance factor, and all three traversals</p>
+              </div>
+              <span class="video-status-pill" id="video-status-1">Ready</span>
             </div>
-            <div class="anim-meta">
-              <strong>In-order Traversal</strong>
-              <p>Visits nodes left → root → right, producing a sorted sequence. The key property that makes BSTs useful for range queries.</p>
-              <span class="anim-badge">Animation coming soon</span>
+            <div class="video-player-wrap" id="video-wrap-1">
+              <video
+                id="video-el-1"
+                class="video-el"
+                controls
+                preload="metadata"
+                src="assets/videos/video1_foundations.mp4"
+              ></video>
             </div>
           </div>
 
-          <div class="anim-card">
-            <div class="anim-preview" aria-hidden="true">
-              <svg viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="60" cy="15" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="60" y="19" text-anchor="middle" fill="#5FAB7A" font-size="9" font-family="Inter">50</text>
-                <circle cx="30" cy="48" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="30" y="52" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">25</text>
-                <circle cx="90" cy="48" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="90" y="52" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">75</text>
-                <circle cx="105" cy="78" r="10" stroke="#D4843C" fill="#2A1E0A"/>
-                <text x="105" y="82" text-anchor="middle" fill="#D4843C" font-size="8" font-family="Inter">90</text>
-                <line x1="52" y1="23" x2="38" y2="40" stroke="#3D7A55"/>
-                <line x1="68" y1="23" x2="82" y2="40" stroke="#3D7A55"/>
-                <line x1="98" y1="56" x2="97" y2="68" stroke="#D4843C" stroke-dasharray="3,2"/>
-              </svg>
+          <!-- VIDEO 2 -->
+          <div class="video-card video-card--locked" id="video-card-2" data-video-index="2">
+            <div class="video-card-header">
+              <span class="video-num-badge">02</span>
+              <div class="video-card-info">
+                <strong class="video-card-title">Part 2: Search, Insertion &amp; Deletion</strong>
+                <p class="video-card-desc">Search, insertion, and all three deletion cases, plus O(height) complexity</p>
+              </div>
+              <span class="video-status-pill video-status-pill--locked" id="video-status-2">Locked</span>
             </div>
-            <div class="anim-meta">
-              <strong>BST Insertion</strong>
-              <p>Traces the path from root to the correct empty spot by comparing values at each node. O(h) where h is tree height.</p>
-              <span class="anim-badge">Animation coming soon</span>
-            </div>
-          </div>
-
-          <div class="anim-card">
-            <div class="anim-preview" aria-hidden="true">
-              <svg viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="40" cy="30" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="40" y="34" text-anchor="middle" fill="#5FAB7A" font-size="9" font-family="Inter">A</text>
-                <circle cx="20" cy="60" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="20" y="64" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">B</text>
-                <line x1="32" y1="38" x2="28" y2="52" stroke="#3D7A55"/>
-                <circle cx="80" cy="30" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="80" y="34" text-anchor="middle" fill="#5FAB7A" font-size="9" font-family="Inter">B</text>
-                <circle cx="60" cy="60" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="60" y="64" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">A</text>
-                <circle cx="100" cy="60" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="100" y="64" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">C</text>
-                <line x1="72" y1="38" x2="68" y2="52" stroke="#3D7A55"/>
-                <line x1="88" y1="38" x2="92" y2="52" stroke="#3D7A55"/>
-                <path d="M50 45 L55 40" stroke="#D4843C" stroke-width="1.8" marker-end="url(#arrow)"/>
-              </svg>
-            </div>
-            <div class="anim-meta">
-              <strong>AVL Left Rotation</strong>
-              <p>Rebalances a right-heavy subtree. The core operation behind AVL trees — keeping height O(log n) guaranteed.</p>
-              <span class="anim-badge">Animation coming soon</span>
+            <div class="video-player-wrap" id="video-wrap-2">
+              <div class="video-lock-overlay" id="video-lock-2">
+                <div class="video-lock-content">
+                  <svg class="video-lock-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  <span class="video-lock-text">Watch Part 1 to unlock</span>
+                </div>
+              </div>
+              <video
+                id="video-el-2"
+                class="video-el"
+                preload="metadata"
+                src="assets/videos/video2_core_operations.mp4"
+                aria-hidden="true"
+              ></video>
             </div>
           </div>
 
-          <div class="anim-card">
-            <div class="anim-preview" aria-hidden="true">
-              <svg viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="60" cy="15" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="60" y="19" text-anchor="middle" fill="#5FAB7A" font-size="9" font-family="Inter">50</text>
-                <circle cx="30" cy="48" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <text x="30" y="52" text-anchor="middle" fill="#7BB896" font-size="9" font-family="Inter">25</text>
-                <circle cx="90" cy="48" r="10" stroke="#D4843C" fill="#2A1E0A" stroke-dasharray="3,2"/>
-                <text x="90" y="52" text-anchor="middle" fill="#D4843C" font-size="8" font-family="Inter">del</text>
-                <line x1="52" y1="23" x2="38" y2="40" stroke="#3D7A55"/>
-                <line x1="68" y1="23" x2="82" y2="40" stroke="#D4843C" stroke-dasharray="3,2"/>
-              </svg>
+          <!-- VIDEO 3 -->
+          <div class="video-card video-card--locked" id="video-card-3" data-video-index="3">
+            <div class="video-card-header">
+              <span class="video-num-badge">03</span>
+              <div class="video-card-info">
+                <strong class="video-card-title">Part 3: Self-Balancing Trees &amp; Real-World Use</strong>
+                <p class="video-card-desc">Why BSTs degrade, AVL rotations, Red-Black trees, and real-world uses</p>
+              </div>
+              <span class="video-status-pill video-status-pill--locked" id="video-status-3">Locked</span>
             </div>
-            <div class="anim-meta">
-              <strong>BST Deletion</strong>
-              <p>Three cases: leaf node, one child, two children. The two-child case uses the in-order successor — the trickiest deletion in BSTs.</p>
-              <span class="anim-badge">Animation coming soon</span>
-            </div>
-          </div>
-
-          <div class="anim-card">
-            <div class="anim-preview" aria-hidden="true">
-              <svg viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="60" cy="15" r="10" stroke="#5FAB7A" fill="#1E2E24"/>
-                <text x="60" y="19" text-anchor="middle" fill="#5FAB7A" font-size="8" font-family="Inter">root</text>
-                <circle cx="30" cy="45" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <circle cx="90" cy="45" r="10" stroke="#3D7A55" fill="#1A2820"/>
-                <circle cx="15" cy="75" r="10" stroke="#2E2920" fill="#181510"/>
-                <circle cx="45" cy="75" r="10" stroke="#2E2920" fill="#181510"/>
-                <line x1="52" y1="23" x2="38" y2="37" stroke="#3D7A55"/>
-                <line x1="68" y1="23" x2="82" y2="37" stroke="#3D7A55"/>
-                <line x1="22" y1="53" x2="23" y2="65" stroke="#2E2920"/>
-                <line x1="38" y1="53" x2="37" y2="65" stroke="#2E2920"/>
-                <rect x="0" y="5" width="120" height="85" fill="none" stroke="#3D7A55" stroke-dasharray="4,3" rx="4" opacity="0.3"/>
-                <text x="60" y="88" text-anchor="middle" fill="#4A4540" font-size="7" font-family="Inter">level-order BFS</text>
-              </svg>
-            </div>
-            <div class="anim-meta">
-              <strong>Level-order Traversal</strong>
-              <p>BFS on a tree — visits nodes level by level. Used for serialization, finding minimum depth, and many interview problems.</p>
-              <span class="anim-badge">Animation coming soon</span>
+            <div class="video-player-wrap" id="video-wrap-3">
+              <div class="video-lock-overlay" id="video-lock-3">
+                <div class="video-lock-content">
+                  <svg class="video-lock-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  <span class="video-lock-text">Watch Part 2 to unlock</span>
+                </div>
+              </div>
+              <video
+                id="video-el-3"
+                class="video-el"
+                preload="metadata"
+                src="assets/videos/video3_self_balancing.mp4"
+                aria-hidden="true"
+              ></video>
             </div>
           </div>
 
-          <div class="anim-card anim-card--placeholder">
-            <div class="anim-placeholder-icon" aria-hidden="true">+</div>
-            <div class="anim-meta">
-              <strong>More coming</strong>
-              <p>Pre-order, post-order, Red-Black insertion, B-tree splits, and Splay tree rotations — all planned.</p>
-            </div>
-          </div>
+        </div><!-- /video-sequence -->
+
+        <!-- All-complete banner — shown by JS when all 3 are watched -->
+        <div class="video-complete-banner" id="video-complete-banner" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M3 8l3.5 3.5 6.5-6.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          All 3 animations complete
         </div>
+
       </section>
     </main>
   </div><!-- /view-synthesis -->
@@ -1574,6 +1025,7 @@
       <div class="drawer-header">
         <div class="drawer-title-area">
           <span class="drawer-badge">Socratic AI Tutor</span>
+          <span class="tutor-mock-badge" id="tutor-mock-badge" style="display:none;">Mock mode</span>
           <div class="stage-selector-wrap">
             <select id="tutor-stage-select" class="tutor-stage-select" aria-label="Select stage topic">
               <option value="0">Stage 1: Foundations</option>
@@ -1617,17 +1069,136 @@
     <span class="pulse-ring"></span>
   </button>
 
-  <!-- Supabase JS Client & Service -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
+  <!-- ════════════════════════════════════════════════════════
+       CHANGE LEVEL / RESTART PATH MODAL
+  ═════════════════════════════════════════════════════════ -->
+  <div id="modal-change-level" class="cdd-modal-backdrop" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-change-level-title">
+    <div class="cdd-modal-card">
+      <div class="cdd-modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🔄</span>
+          <h2 id="modal-change-level-title" class="cdd-modal-title">Change Level or Restart Path</h2>
+        </div>
+        <button type="button" class="cdd-modal-close" id="btn-close-modal-change-level" aria-label="Close">✕</button>
+      </div>
+      <p class="cdd-modal-desc">
+        Select a new level to start fresh, or retake the placement check to personalize your path. Your account and notes remain saved.
+      </p>
+
+      <div class="cdd-modal-levels-grid">
+        <button type="button" class="cdd-level-quick-btn" id="btn-quick-beginner" data-level="beginner">
+          <span class="cdd-quick-icon">🌱</span>
+          <div class="cdd-quick-info">
+            <span class="cdd-quick-name">Beginner</span>
+            <span class="cdd-quick-sub">From the basics (30 curated steps)</span>
+          </div>
+        </button>
+        <button type="button" class="cdd-level-quick-btn" id="btn-quick-intermediate" data-level="intermediate">
+          <span class="cdd-quick-icon">🌿</span>
+          <div class="cdd-quick-info">
+            <span class="cdd-quick-name">Intermediate</span>
+            <span class="cdd-quick-sub">Skip introductory theory (18 steps)</span>
+          </div>
+        </button>
+        <button type="button" class="cdd-level-quick-btn" id="btn-quick-revision" data-level="revision">
+          <span class="cdd-quick-icon">🌳</span>
+          <div class="cdd-quick-info">
+            <span class="cdd-quick-name">Just Revising</span>
+            <span class="cdd-quick-sub">Fast video recap &amp; checkpoints (8 steps)</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="cdd-modal-footer">
+        <button type="button" class="btn btn--outline" id="btn-retake-onboarding">
+          📝 Full Placement Onboarding →
+        </button>
+        <button type="button" class="btn btn--ghost" id="btn-cancel-modal-change-level">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Configuration & Supabase SDK ── -->
+  <script src="js/config.js" onerror="window.__CDD_CONFIG_MISSING = true;"></script>
+  <script>
+    if (!window.CDD_CONFIG) {
+      window.CDD_CONFIG = {
+        SUPABASE_URL: '',
+        SUPABASE_ANON_KEY: '',
+        USE_MOCK: true,
+        isMissing: true
+      };
+      document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('cdd-config-missing-banner')) {
+          const banner = document.createElement('div');
+          banner.id = 'cdd-config-missing-banner';
+          banner.className = 'cdd-config-missing-banner';
+          banner.innerHTML = `
+            <div class="cdd-banner-content">
+              <span class="cdd-banner-icon">⚙️</span>
+              <span><strong>Setup Notice:</strong> <code>js/config.js</code> was not found. Running in mock mode. To connect Supabase, copy <code>js/config.example.js</code> to <code>js/config.js</code> and enter your credentials.</span>
+            </div>
+            <button type="button" class="cdd-banner-close" onclick="this.parentElement.remove()" aria-label="Dismiss">✕</button>
+          `;
+          document.body.prepend(banner);
+        }
+      });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/cloudStore.js"></script>
+
+  <!-- ── Catalog data layer (must come before state.js) ── -->
+  <script src="data/catalog.js"></script>
+  <script src="js/catalog.js"></script>
+  <script src="js/pathEngine.js"></script>
+  <script src="js/pathStore.js"></script>
+  <script src="js/signals.js"></script>
+  <script src="js/mindsetEngine.js"></script>
 
   <script src="js/state.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/canvas.js"></script>
-  <script src="js/config.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/tutor-chat.js"></script>
+  <script src="js/roadmap.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/synthesis.js"></script>
+  <script src="js/onboarding.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/journey.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/routes.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- ── Run catalog integrity check + restore level badge on load ── -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (typeof Catalog !== "undefined" && typeof Catalog.validate === "function") {
+        Catalog.validate();
+      }
+      if (typeof PathEngine !== "undefined" && typeof PathEngine.test === "function") {
+        PathEngine.test();
+      }
+      // Restore level badge for returning users
+      if (typeof State !== "undefined") {
+        const profile = State.getProfile();
+        if (profile && profile.level) {
+          const labelMap = { beginner: "Beginner", intermediate: "Intermediate", revision: "Revision" };
+          const badge = labelMap[profile.level] || profile.level;
+          document.querySelectorAll(".ob-sidebar-level-badge").forEach(function(el) {
+            el.textContent = badge;
+          });
+        }
+      }
+      // Initialize Roadmap if container exists
+      if (typeof Roadmap !== "undefined" && document.getElementById("roadmap-timeline")) {
+        Roadmap.init();
+      }
+    });
+  </script>
 </body>
 </html>

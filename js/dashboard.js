@@ -336,7 +336,26 @@
 
       } catch (err) {
         console.error("[assessment] evaluation error:", err);
-        showToast("Failed to evaluate assessment. Please try again.", "danger");
+        const friendly = (typeof AI !== 'undefined')
+          ? AI.getFriendlyErrorMessage(err)
+          : (err?.friendlyMessage || err?.message || 'Failed to evaluate assessment.');
+
+        if (feedbackContainer) {
+          feedbackContainer.innerHTML = `
+            <div class="feedback-card feedback-card--warning" style="border: 1px solid var(--accent-amber); background: rgba(224, 108, 117, 0.08); padding: 16px; border-radius: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span class="rating-badge rating-badge--review">⚠️ Evaluation Error</span>
+              </div>
+              <p style="margin: 0 0 12px; color: var(--cream); font-size: 0.95rem;">${friendly}</p>
+              <button type="button" class="btn btn--secondary btn--sm btn-retry-stage-eval">Retry Evaluation ↻</button>
+            </div>
+          `;
+          feedbackContainer.hidden = false;
+          feedbackContainer.querySelector('.btn-retry-stage-eval')?.addEventListener('click', () => {
+            form.dispatchEvent(new Event('submit'));
+          });
+        }
+        showToast(friendly, "danger");
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -356,8 +375,9 @@
 
   if (btnGoSynth)  btnGoSynth.addEventListener('click', goSynthesis);
   if (navSynth)    navSynth.addEventListener('click', () => {
-    if (State.allComplete()) goSynthesis();
-    else showToast('Complete all 4 stages first.', 'info');
+    const isComplete = window.Roadmap ? Roadmap.getProgress().pathComplete : State.allComplete();
+    if (isComplete) goSynthesis();
+    else showToast('Complete all steps on your path first.', 'info');
   });
 
   /* ── Sidebar home link (no-op on dashboard itself) ──────── */
@@ -368,12 +388,12 @@
 
   /* ── Full init from state ───────────────────────────────── */
   function initFromState() {
-    const state = State.get();
-    if (!state.currentUser) return;
+    const state = State.get() || {};
+    const user = state.currentUser || { name: 'Admin', email: 'admin@conceptdeepdive.com' };
 
-    const stages = state.stages;
+    const stages = state.stages || [];
 
-    // Apply each card's status
+    // Apply each card's status (legacy fallback if present)
     stages.forEach((st, i) => {
       const card = document.querySelector(`.stage-card[data-stage="${i}"]`);
       if (card) applyStatus(card, st.status, st);
@@ -391,30 +411,40 @@
       }
     });
 
-    // Stats + chips + ring
-    const count = stages.filter(s => s.status === 'completed').length;
-    updateStats(count);
-    updateChips(stages);
-
-    // Completion CTA visibility
-    if (count === 4 && completionCta) {
-      completionCta.hidden = false;
-      if (topicHeader) topicHeader.classList.add('topic-header--complete');
-      const badge = document.getElementById('synthesis-nav-badge');
-      if (badge) {
-        badge.textContent = 'Ready';
-        badge.classList.add('sidebar-link-badge--unlocked');
+    // Roadmap active: delegate timeline and progress to Roadmap
+    if (window.Roadmap && document.getElementById('roadmap-timeline')) {
+      if (typeof Roadmap.isInitialized === 'function' && Roadmap.isInitialized()) {
+        if (typeof Roadmap.syncStatsUI === 'function') {
+          Roadmap.syncStatsUI();
+        }
+      } else {
+        Roadmap.init();
       }
-    } else if (completionCta) {
-      completionCta.hidden = true;
+    } else {
+      // Legacy stats + chips + ring
+      const count = stages.filter(s => s.status === 'completed').length;
+      updateStats(count);
+      updateChips(stages);
+
+      // Completion CTA visibility
+      if (count === 4 && completionCta) {
+        completionCta.hidden = false;
+        if (topicHeader) topicHeader.classList.add('topic-header--complete');
+        const badge = document.getElementById('synthesis-nav-badge');
+        if (badge) {
+          badge.textContent = 'Ready';
+          badge.classList.add('sidebar-link-badge--unlocked');
+        }
+      } else if (completionCta) {
+        completionCta.hidden = true;
+      }
     }
 
     // User identity
-    const user = state.currentUser;
     const nameEl   = document.getElementById('sidebar-user-name');
     const avatarEl = document.getElementById('user-avatar-initials');
-    if (nameEl && user)   nameEl.textContent = user.name;
-    if (avatarEl && user) {
+    if (nameEl)   nameEl.textContent = user.name;
+    if (avatarEl) {
       const parts = user.name.trim().split(/\s+/);
       avatarEl.textContent = parts.length >= 2
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
@@ -422,19 +452,21 @@
     }
 
     // Update stage selector dropdown options (enable/disable based on lock status)
-    const select = document.getElementById('tutor-stage-select');
-    if (select) {
-      stages.forEach((st, idx) => {
-        const opt = select.options[idx];
-        if (opt) opt.disabled = (st.status === 'locked');
-      });
+    if (!window.Roadmap) {
+      const select = document.getElementById('tutor-stage-select');
+      if (select) {
+        stages.forEach((st, idx) => {
+          const opt = select.options[idx];
+          if (opt) opt.disabled = (st.status === 'locked');
+        });
 
-      // Fallback activeStageId to the highest unlocked stage if it gets locked
-      if (stages[activeStageId]?.status === 'locked') {
-        const unlocked = stages.filter(s => s.status !== 'locked');
-        if (unlocked.length > 0) {
-          activeStageId = unlocked[unlocked.length - 1].id;
-          select.value = String(activeStageId);
+        // Fallback activeStageId to the highest unlocked stage if it gets locked
+        if (stages[activeStageId]?.status === 'locked') {
+          const unlocked = stages.filter(s => s.status !== 'locked');
+          if (unlocked.length > 0) {
+            activeStageId = unlocked[unlocked.length - 1].id;
+            select.value = String(activeStageId);
+          }
         }
       }
     }
@@ -453,18 +485,28 @@
   const floatingToggle = document.getElementById('tutor-floating-toggle');
 
   function openChat(stageId) {
-    const stages = State.get().stages;
-    const unlocked = stages.filter(s => s.status !== 'locked');
-    const highestUnlockedId = unlocked.length > 0 ? unlocked[unlocked.length - 1].id : 0;
+    if (window.Roadmap) {
+      const curr = Roadmap.getCurrentStep();
+      if (curr && typeof Catalog !== 'undefined') {
+        const item = Catalog.byId(curr.id);
+        if (item) {
+          State.setState({ currentTopic: `${item.title} (${item.topics.join(', ')})` });
+        }
+      }
+    } else {
+      const stages = State.get().stages;
+      const unlocked = stages.filter(s => s.status !== 'locked');
+      const highestUnlockedId = unlocked.length > 0 ? unlocked[unlocked.length - 1].id : 0;
 
-    if (stageId === undefined || stages[stageId]?.status === 'locked') {
-      stageId = highestUnlockedId;
-    }
+      if (stageId === undefined || stages[stageId]?.status === 'locked') {
+        stageId = highestUnlockedId;
+      }
 
-    activeStageId = stageId;
+      activeStageId = stageId;
 
-    if (stageSelect) {
-      stageSelect.value = String(activeStageId);
+      if (stageSelect) {
+        stageSelect.value = String(activeStageId);
+      }
     }
 
     if (chatDrawer) {
@@ -472,6 +514,7 @@
       chatDrawer.hidden = false;
     }
 
+    updateMockBadge();
     renderChatHistory();
 
     // Reset textarea height and focus
@@ -479,6 +522,14 @@
       chatInputText.value = '';
       chatInputText.style.height = 'auto';
       setTimeout(() => chatInputText.focus(), 200);
+    }
+  }
+
+  function updateMockBadge() {
+    const badge = document.getElementById('tutor-mock-badge');
+    if (badge) {
+      const isMock = typeof AI !== 'undefined' ? AI.isMockEnabled() : true;
+      badge.style.display = isMock ? 'inline-block' : 'none';
     }
   }
 
@@ -512,12 +563,18 @@
     stageSelect.addEventListener('change', () => {
       const selectedId = parseInt(stageSelect.value, 10);
       activeStageId = selectedId;
+      if (window.Roadmap && Roadmap.getSteps) {
+        const steps = Roadmap.getSteps();
+        const step = steps[selectedId];
+        if (step && typeof Catalog !== 'undefined') {
+          const it = Catalog.byId(step.id);
+          if (it) State.setState({ currentTopic: `${it.title} (${it.topics.join(', ')})` });
+        }
+      }
       renderChatHistory();
       if (chatInputText) chatInputText.focus();
     });
   }
-
-
 
   // Render stage message history
   function renderChatHistory() {
@@ -535,7 +592,16 @@
         "Essential Reading & Excerpts",
         "Papers & Deeper Reading"
       ];
-      const greeting = `Hello! I'm your Socratic Tutor for the ${topicNames[activeStageId]} stage. Ask me anything about this stage, and let's reason through it together!`;
+      let stageName = topicNames[activeStageId] || "Binary Search Trees";
+      if (window.Roadmap && Roadmap.getSteps) {
+        const steps = Roadmap.getSteps();
+        const step = steps[activeStageId] || Roadmap.getCurrentStep();
+        if (step && typeof Catalog !== 'undefined') {
+          const it = Catalog.byId(step.id);
+          if (it) stageName = it.title;
+        }
+      }
+      const greeting = `Hello! I'm your Socratic Tutor for ${stageName}. Ask me anything about this step, and let's reason through it together!`;
       appendMessageBubble('tutor', greeting, false);
     } else {
       history.forEach(msg => {
@@ -633,6 +699,11 @@
       State.addChatMessage(activeStageId, 'student', rawText);
       appendMessageBubble('student', rawText);
 
+      // Log tutor_message telemetry event (Prompt 4)
+      if (typeof Signals !== 'undefined' && Signals.logTutorMessage) {
+        Signals.logTutorMessage(rawText, true);
+      }
+
       // Show typing indicator
       showTypingIndicator();
 
@@ -655,9 +726,52 @@
         }
       } catch (err) {
         removeTypingIndicator();
-        appendMessageBubble('tutor', "I'm sorry, I ran into a minor issue. Could you please try resending your question?");
+        appendErrorMessage(err, () => {
+          // Re-send the question on retry
+          chatInputText.value = rawText;
+          chatForm.dispatchEvent(new Event('submit'));
+        });
       }
     });
+
+    function appendErrorMessage(err, retryFn) {
+      if (!chatMessagesContainer) return;
+
+      const msgEl = document.createElement('div');
+      msgEl.className = 'chat-msg chat-msg--tutor chat-msg--error';
+
+      const bubbleEl = document.createElement('div');
+      bubbleEl.className = 'chat-bubble chat-bubble--error';
+
+      const friendly = (typeof AI !== 'undefined')
+        ? AI.getFriendlyErrorMessage(err)
+        : (err?.friendlyMessage || err?.message || 'An error occurred.');
+
+      bubbleEl.innerHTML = `
+        <div class="chat-error-body">
+          <span class="chat-error-icon" aria-hidden="true">⚠️</span>
+          <span class="chat-error-text">${formatTextHtml(friendly)}</span>
+        </div>
+        <div class="chat-error-actions" style="margin-top: 8px;">
+          <button type="button" class="btn btn--outline btn--xs btn-chat-retry">Retry ↺</button>
+        </div>
+      `;
+
+      bubbleEl.querySelector('.btn-chat-retry')?.addEventListener('click', () => {
+        msgEl.remove();
+        if (typeof retryFn === 'function') retryFn();
+      });
+
+      const timeEl = document.createElement('span');
+      timeEl.className = 'chat-msg-time';
+      const now = new Date();
+      timeEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      msgEl.appendChild(bubbleEl);
+      msgEl.appendChild(timeEl);
+      chatMessagesContainer.appendChild(msgEl);
+      scrollToBottom();
+    }
 
     // Expand height dynamically
     chatInputText.addEventListener('input', () => {
@@ -680,5 +794,8 @@
 
   State.subscribe(initFromState);
   window.Dashboard = { initFromState, openChat, openKeySettings };
+
+  // Run on startup
+  initFromState();
 
 })();

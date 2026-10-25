@@ -6,6 +6,7 @@
 (function initSynthesisModule() {
 
   let _isGenerating = false;
+  let _synthesisError = null;
 
   const STAGE_TITLES = [
     "Stage 1: Foundations & Theory",
@@ -52,17 +53,41 @@
       const state = State.get();
       
       // Build assessment summaries string
-      const assessmentSummaries = state.stages.map((st, i) => {
-        const title = STAGE_TITLES[i] || `Stage ${i+1}`;
-        if (st.assessment && st.assessment.question && st.assessment.answer) {
-          return `${title}: Question: "${st.assessment.question}" | Answer: "${st.assessment.answer}" | Rating: ${st.assessment.result?.rating || 'solid'}`;
-        }
-        return `${title}: Mastered`;
-      }).join("\n");
+      let assessmentSummaries = '';
+      if (window.Roadmap && Roadmap.getSteps) {
+        const steps = Roadmap.getSteps();
+        assessmentSummaries = steps
+          .filter(s => s.status === 'done' || s.status === 'skipped')
+          .map(s => {
+            const it = typeof Catalog !== 'undefined' ? Catalog.byId(s.id) : null;
+            return `${it?.title || s.id} (${it?.type || 'step'}): ${s.status === 'done' ? 'Completed' : 'Skipped'}`;
+          })
+          .join("\n");
+      } else {
+        assessmentSummaries = state.stages.map((st, i) => {
+          const title = STAGE_TITLES[i] || `Stage ${i+1}`;
+          if (st.assessment && st.assessment.question && st.assessment.answer) {
+            return `${title}: Question: "${st.assessment.question}" | Answer: "${st.assessment.answer}" | Rating: ${st.assessment.result?.rating || 'solid'}`;
+          }
+          return `${title}: Mastered`;
+        }).join("\n");
+      }
 
-      // Build flagged gaps string
-      const flaggedGapsStr = (state.flaggedGaps && state.flaggedGaps.length > 0)
-        ? state.flaggedGaps.join("; ")
+      // Build flagged gaps and adaptations string
+      const gapEntries = [...(state.flaggedGaps || [])];
+      if (typeof State.getAdaptations === 'function') {
+        const adaptations = State.getAdaptations();
+        adaptations.forEach(ad => {
+          if (ad.added && ad.added.length > 0) {
+            gapEntries.push(`Adaptation on ${ad.quizId} (${ad.rating}): added ${ad.added.join(', ')}`);
+          }
+          if (ad.skipped && ad.skipped.length > 0) {
+            gapEntries.push(`Mastery on ${ad.quizId} (${ad.rating}): skipped ${ad.skipped.join(', ')}`);
+          }
+        });
+      }
+      const flaggedGapsStr = gapEntries.length > 0
+        ? gapEntries.join("; ")
         : "None logged during deep-dive.";
 
       const topic = "Trees & Binary Search Trees (BSTs)";
@@ -74,11 +99,17 @@
           topic
         );
         State.saveSummary(summaryText);
+        _synthesisError = null;
       } catch (err) {
         console.error("[synthesis] Failed to generate summary:", err);
-        // Save fallback mock if unexpected error occurs
-        const fallback = TutorChatService.getMockSummaryResponse(assessmentSummaries, flaggedGapsStr, topic);
-        State.saveSummary(fallback);
+        const isMockAllowed = (typeof AI !== 'undefined' && AI.isMockEnabled && AI.isMockEnabled()) || (err && err.code === 'NO_KEY');
+        if (isMockAllowed) {
+          const fallback = TutorChatService.getMockSummaryResponse(assessmentSummaries, flaggedGapsStr, topic);
+          State.saveSummary(fallback);
+          _synthesisError = null;
+        } else {
+          _synthesisError = (typeof AI !== 'undefined') ? AI.getFriendlyErrorMessage(err) : (err?.message || 'Failed to generate summary.');
+        }
       } finally {
         _isGenerating = false;
         this.render();
@@ -90,11 +121,10 @@
       if (!container) return;
 
       const state = State.get();
-      // Unlock when all 4 stages are marked complete — consistent with
-      // dashboard.js CTA, sidebar badge, and nav guard (all use completedCount).
-      // masteredCount() only reflects submitted assessments and is optional.
+      const isRoadmap = Boolean(window.Roadmap && Roadmap.getProgress);
+      const isRoadmapComplete = isRoadmap ? Roadmap.getProgress().pathComplete : false;
+      const allComplete = isRoadmapComplete || State.allComplete();
       const completedCount = State.completedCount();
-      const allComplete = State.allComplete();
       const summary = state.summary;
       const apiKey = TutorChatService.getApiKey();
 
@@ -120,28 +150,59 @@
     },
 
     renderLockedState(completedCount) {
-      const percent = Math.round((completedCount / 4) * 100);
-      return `
-        <div class="synth-lock-card">
-          <div class="synth-lock-header">
-            <div class="synth-lock-badge">
-              <span class="synth-lock-icon">🔒</span>
-              <div>
-                <strong>4-Stage Mastery Required</strong>
-                <p>Complete and master all 4 stages to unlock your personalized AI synthesis summary.</p>
+      let lockHeaderHtml = '';
+      if (window.Roadmap && Roadmap.getProgress) {
+        const prog = Roadmap.getProgress();
+        lockHeaderHtml = `
+          <div class="synth-lock-card">
+            <div class="synth-lock-header">
+              <div class="synth-lock-badge">
+                <span class="synth-lock-icon">🔒</span>
+                <div>
+                  <strong>Roadmap Completion Required</strong>
+                  <p>Complete all ${prog.total} steps on your path to unlock your synthesis summary and visual animations.</p>
+                </div>
               </div>
-            </div>
-            <div class="synth-lock-progress">
-              <div class="synth-progress-meta">
-                <span>Progress: ${completedCount} of 4 Stages Complete</span>
-                <span>${percent}%</span>
-              </div>
-              <div class="synth-progress-track">
-                <div class="synth-progress-fill" style="width: ${percent}%;"></div>
+              <div class="synth-lock-progress">
+                <div class="synth-progress-meta">
+                  <span>Progress: ${prog.completedCount} of ${prog.total} Steps Complete</span>
+                  <span>${prog.weightedPct}%</span>
+                </div>
+                <div class="synth-progress-track">
+                  <div class="synth-progress-fill" style="width: ${prog.weightedPct}%;"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        `;
+      } else {
+        const percent = Math.round((completedCount / 4) * 100);
+        lockHeaderHtml = `
+          <div class="synth-lock-card">
+            <div class="synth-lock-header">
+              <div class="synth-lock-badge">
+                <span class="synth-lock-icon">🔒</span>
+                <div>
+                  <strong>4-Stage Mastery Required</strong>
+                  <p>Complete and master all 4 stages to unlock your personalized AI synthesis summary.</p>
+                </div>
+              </div>
+              <div class="synth-lock-progress">
+                <div class="synth-progress-meta">
+                  <span>Progress: ${completedCount} of 4 Stages Complete</span>
+                  <span>${percent}%</span>
+                </div>
+                <div class="synth-progress-track">
+                  <div class="synth-progress-fill" style="width: ${percent}%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        ${lockHeaderHtml}
 
         <div class="synth-preview-cards">
           <div class="synth-preview-card synth-preview-card--locked">
@@ -177,9 +238,20 @@
     },
 
     renderUnlockedState(apiKey) {
-      const apiBadgeText = `<span class="synth-api-badge synth-api-badge--active">⚡ Gemini 3.5 Flash Lite Connected</span>`;
+      const modelName = (typeof AI !== 'undefined' && AI.getModelName) ? AI.getModelName() : 'Gemini';
+      const isMock = (typeof AI !== 'undefined' && AI.isMockEnabled) ? AI.isMockEnabled() : false;
+      const apiBadgeText = isMock
+        ? `<span class="synth-api-badge">🌱 Running in Mock Mode</span>`
+        : `<span class="synth-api-badge synth-api-badge--active">⚡ ${modelName} Connected</span>`;
 
       return `
+        ${_synthesisError ? `
+          <div class="synth-error-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: var(--cream);">
+            <strong style="color: #ef4444; display: block; margin-bottom: 4px;">⚠️ Synthesis Generation Error</strong>
+            <p style="margin: 0 0 10px; font-size: 0.95rem;">${_synthesisError}</p>
+            <button type="button" class="btn btn--primary btn--sm" id="btn-generate-summary">Retry generating summary ↺</button>
+          </div>
+        ` : ''}
         <div class="synth-cta-card">
           <div class="synth-cta-content">
             <div class="synth-cta-sparkle" aria-hidden="true">🌿</div>
@@ -194,7 +266,7 @@
           <div class="synth-cta-action">
             <button type="button" class="btn btn--primary btn--lg btn-synth-trigger" id="btn-generate-summary">
               <span class="btn-sparkle-icon">✨</span>
-              Generate My Summary
+              ${_synthesisError ? 'Retry Generating Summary' : 'Generate My Summary'}
             </button>
           </div>
         </div>
@@ -262,6 +334,13 @@
       const formattedHTML = this.parseSummaryMarkdown(summary.text);
 
       return `
+        ${_synthesisError ? `
+          <div class="synth-error-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: var(--cream);">
+            <strong style="color: #ef4444; display: block; margin-bottom: 4px;">⚠️ Regeneration Error</strong>
+            <p style="margin: 0 0 10px; font-size: 0.95rem;">${_synthesisError}</p>
+            <button type="button" class="btn btn--primary btn--sm" id="btn-regenerate-summary">Retry regenerating summary ↺</button>
+          </div>
+        ` : ''}
         <div class="synth-summary-container">
           <div class="synth-summary-toolbar">
             <div class="synth-toolbar-info">
@@ -384,39 +463,216 @@
 
   window.Synthesis = Synthesis;
 
-  /* ── Animations "Mark as viewed" toggle ─────────────────── */
-  (function initAnimWatchedBtn() {
-    const btn = document.getElementById('btn-mark-animations-watched');
-    if (!btn) return;
+  /* ── VideoPlayer — Sequential unlock module ─────────────────
+   *
+   * Three videos unlock one after another:
+   *   Video 1 — unlocked when the Synthesis page is reached
+   *   Video 2 — unlocked after Video 1 is watched (≥90% or ended)
+   *   Video 3 — unlocked after Video 2 is watched
+   *
+   * Persistence: State.setVideoWatched / State.saveVideoPosition
+   *              (backed by localStorage in state.js)
+   * ─────────────────────────────────────────────────────────── */
+  (function initVideoPlayer() {
+    // Wait until the DOM node exists (Synthesis view might not be in the
+    // active viewport on first parse, but the element is always in the DOM)
+    const seq = document.getElementById('video-sequence');
+    if (!seq) return;
 
-    function syncBtn(watched) {
-      btn.setAttribute('aria-pressed', String(watched));
-      const label = btn.querySelector('.anim-watched-label');
-      if (watched) {
-        btn.classList.add('anim-watched-btn--done');
-        if (label) label.textContent = 'Animations viewed ✓';
-      } else {
-        btn.classList.remove('anim-watched-btn--done');
-        if (label) label.textContent = 'Mark as viewed';
+    const VIDEOS = [
+      { id: 'vid-1', index: 1, videoId: 'video-el-1', cardId: 'video-card-1', wrapId: 'video-wrap-1', lockId: 'video-lock-1', statusId: 'video-status-1' },
+      { id: 'vid-2', index: 2, videoId: 'video-el-2', cardId: 'video-card-2', wrapId: 'video-wrap-2', lockId: 'video-lock-2', statusId: 'video-status-2' },
+      { id: 'vid-3', index: 3, videoId: 'video-el-3', cardId: 'video-card-3', wrapId: 'video-wrap-3', lockId: 'video-lock-3', statusId: 'video-status-3' },
+    ];
+
+    /**
+     * Reads the current watch state for all videos and sets the DOM to match.
+     * Called once on init and then implicitly after each state change.
+     */
+    function syncUI() {
+      const vp = State.getVideoProgress();
+
+      VIDEOS.forEach(({ id, index, videoId, cardId, lockId, statusId }) => {
+        const card    = document.getElementById(cardId);
+        const videoEl = document.getElementById(videoId);
+        const lockEl  = document.getElementById(lockId);
+        const pillEl  = document.getElementById(statusId);
+        if (!card || !videoEl) return;
+
+        // Ensure video src matches catalog url field exactly
+        const catalogItem = typeof Catalog !== 'undefined' ? Catalog.byId(id) : null;
+        const catalogUrl = (catalogItem && catalogItem.url) || (
+          index === 1 ? 'assets/videos/video1_foundations.mp4' :
+          index === 2 ? 'assets/videos/video2_core_operations.mp4' :
+          'assets/videos/video3_self_balancing.mp4'
+        );
+        if (!videoEl.getAttribute('src') || videoEl.getAttribute('src') !== catalogUrl) {
+          videoEl.setAttribute('src', catalogUrl);
+          videoEl.src = catalogUrl;
+        }
+
+        const isWatched  = Boolean(vp[index]);
+        // Synthesis page videos are replay-only (no locking); unlock logic lives in the roadmap
+        const isUnlocked = true;
+
+        // Card locked class
+        card.classList.remove('video-card--locked');
+
+        // Lock overlay
+        if (lockEl) {
+          lockEl.style.display = 'none';
+        }
+
+        // Enable controls for replay
+        videoEl.removeAttribute('disabled');
+        videoEl.removeAttribute('aria-hidden');
+        videoEl.controls = true;
+        videoEl.tabIndex = 0;
+
+        // Status pill
+        if (pillEl) {
+          pillEl.className = 'video-status-pill';
+          if (isWatched) {
+            pillEl.classList.add('video-status-pill--watched');
+            pillEl.textContent = 'Watched';
+          } else if (isUnlocked) {
+            pillEl.textContent = 'Ready';
+          } else {
+            pillEl.classList.add('video-status-pill--locked');
+            pillEl.textContent = 'Locked';
+          }
+        }
+      });
+
+      // All-complete banner
+      const banner = document.getElementById('video-complete-banner');
+      if (banner) {
+        const allDone = vp[1] && vp[2] && vp[3];
+        if (allDone && banner.hidden) {
+          banner.hidden = false; // triggers CSS animation because it was hidden
+        } else if (!allDone) {
+          banner.hidden = true;
+        }
       }
     }
 
-    // Restore persisted state on synthesis page open
-    function refreshBtn() {
-      syncBtn(State.get().animationsWatched);
+    /**
+     * Plays the unlock transition on a card:
+     *  - Fade the lock overlay out
+     *  - Brighten the card via the videoCardUnlock animation
+     *  - Scroll the newly-unlocked card into view
+     */
+    function playUnlockTransition(videoMeta) {
+      const card   = document.getElementById(videoMeta.cardId);
+      const lockEl = document.getElementById(videoMeta.lockId);
+
+      if (lockEl) {
+        lockEl.classList.add('is-unlocking');
+        // Remove overlay from DOM after transition ends
+        lockEl.addEventListener('transitionend', () => lockEl.remove(), { once: true });
+      }
+
+      if (card) {
+        card.classList.add('video-card--unlocking');
+        card.addEventListener('animationend', () => {
+          card.classList.remove('video-card--unlocking');
+        }, { once: true });
+
+        // Scroll into view after a short delay (let animation start)
+        setTimeout(() => {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 120);
+      }
     }
 
-    btn.addEventListener('click', () => {
-      const current = State.get().animationsWatched;
-      State.setAnimationsWatched(!current);
-      syncBtn(!current);
-      // Refresh dashboard stats if it's rendered (so ring/% update immediately)
-      if (window.Dashboard) window.Dashboard.initFromState();
-    });
+    /**
+     * Called when a video is considered "watched" (ended or ≥90% progress).
+     * Marks it in state, runs the unlock animation on the next card if needed,
+     * and triggers a dashboard refresh for the progress ring.
+     */
+    function onVideoWatched(index) {
+      const wasWatched = State.getVideoProgress()[index];
+      if (wasWatched) return; // already done — idempotent
 
-    // Wire into State subscription so button reflects state on every render
-    State.subscribe(refreshBtn);
-    refreshBtn();
+      State.setVideoWatched(index);
+
+      // Update UI immediately
+      syncUI();
+
+      // Play unlock transition on the NEXT card if it exists
+      const nextMeta = VIDEOS.find(v => v.index === index + 1);
+      if (nextMeta) {
+        // Small delay so the "Watched" pill change settles first
+        setTimeout(() => playUnlockTransition(nextMeta), 200);
+      }
+
+      // Refresh dashboard progress ring / stats if open
+      if (window.Dashboard) window.Dashboard.initFromState();
+    }
+
+    /**
+     * Restore saved playback position and wire all event listeners
+     * for a single video element.
+     */
+    function attachVideoListeners({ index, videoId }) {
+      const videoEl = document.getElementById(videoId);
+      if (!videoEl) return;
+
+      // Restore saved position once metadata is available
+      const savedPos = State.getVideoPosition(index);
+      if (savedPos > 0) {
+        const restorePos = () => {
+          // Only restore if video is not watched (don't reset to start)
+          if (!State.getVideoProgress()[index] && videoEl.duration > 0) {
+            videoEl.currentTime = Math.min(savedPos, videoEl.duration - 1);
+          }
+        };
+        if (videoEl.readyState >= 1) {
+          restorePos();
+        } else {
+          videoEl.addEventListener('loadedmetadata', restorePos, { once: true });
+        }
+      }
+
+      // Watched trigger: video ended naturally
+      videoEl.addEventListener('ended', () => {
+        onVideoWatched(index);
+      });
+
+      // Watched trigger: user scrubbed to ≥90% of duration
+      videoEl.addEventListener('timeupdate', () => {
+        if (!videoEl.duration || State.getVideoProgress()[index]) return;
+        if (videoEl.currentTime / videoEl.duration >= 0.9) {
+          onVideoWatched(index);
+        }
+      });
+
+      // Save playback position on pause / before unload
+      const savePos = () => {
+        if (videoEl.currentTime > 0) {
+          State.saveVideoPosition(index, videoEl.currentTime);
+        }
+      };
+      videoEl.addEventListener('pause', savePos);
+      window.addEventListener('beforeunload', savePos, { passive: true });
+
+      // Hard guard: intercept any attempt to play a locked video
+      videoEl.addEventListener('play', () => {
+        const vp = State.getVideoProgress();
+        const isUnlocked = index === 1 || Boolean(vp[index - 1]);
+        if (!isUnlocked) {
+          videoEl.pause();
+        }
+      });
+    }
+
+    // ── Bootstrap ───────────────────────────────────────────
+    syncUI();
+    VIDEOS.forEach(attachVideoListeners);
+
+    // Stay reactive to external state changes (e.g. logout / reset)
+    State.subscribe(() => syncUI());
   })();
 
 })();
+

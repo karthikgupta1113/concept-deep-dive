@@ -1,13 +1,15 @@
 /**
  * app.js — SPA router (auth ↔ dashboard ↔ synthesis)
+ * Database / Supabase session logic removed. Ready for fresh DB integration.
  */
 
 (function initApp() {
 
   const views = {
-    auth:      document.getElementById('view-auth'),
-    dashboard: document.getElementById('view-dashboard'),
-    synthesis: document.getElementById('view-synthesis'),
+    auth:       document.getElementById('view-auth'),
+    onboarding: document.getElementById('view-onboarding'),
+    dashboard:  document.getElementById('view-dashboard'),
+    synthesis:  document.getElementById('view-synthesis'),
   };
 
   /* ── Show a view ─────────────────────────────────────────── */
@@ -24,12 +26,15 @@
       if (window._treeCanvasCleanup) window._treeCanvasCleanup();
     }
 
+    if (name === 'onboarding' && window.Onboarding) {
+      window.Onboarding.show();
+    }
+
     if (name === 'dashboard' && window.Dashboard) {
       window.Dashboard.initFromState();
     }
 
     if (name === 'synthesis') {
-      // Reset scroll to top — .synth-main is the overflow-y:auto container
       const synthMain = document.querySelector('.synth-main');
       if (synthMain) synthMain.scrollTop = 0;
       window.scrollTo(0, 0);
@@ -39,7 +44,6 @@
 
   /* ── Reset dashboard DOM on logout ──────────────────────── */
   function _resetDashboardDOM() {
-    // Reset stage cards to default state
     document.querySelectorAll('.stage-card').forEach((card, i) => {
       card.dataset.status = i === 0 ? 'not-started' : 'locked';
 
@@ -60,27 +64,22 @@
       const pill = card.querySelector('.stage-status-pill');
       if (pill && i !== 0) pill.classList.add('stage-status-pill--locked');
 
-      // Re-hide expanded content
       const exp = card.querySelector('.stage-expanded-content');
       if (exp) exp.classList.add('stage-expanded-content--hidden');
       const area = card.querySelector('.stage-content-area');
       if (area) area.style.display = '';
     });
 
-    // Reset CTA
     const cta = document.getElementById('completion-cta');
     if (cta) cta.hidden = true;
 
-    // Reset header glow
     document.querySelector('.topic-header')?.classList.remove('topic-header--complete');
 
-    // Reset progress chips
     [0,1,2,3].forEach(i => {
       document.getElementById(`chip-${i}`)?.classList.remove('progress-chip--done');
       document.getElementById(`chipline-${i}`)?.classList.remove('progress-chip-line--filled');
     });
 
-    // Reset stats
     const sc = document.getElementById('stat-completed');
     const sp = document.getElementById('stat-percent');
     const rf = document.getElementById('progress-ring-fill');
@@ -90,14 +89,12 @@
     if (sb) sb.textContent = '0 of 4 stages';
     if (rf) rf.style.strokeDashoffset = '100';
 
-    // Reset nav badge
     const badge = document.getElementById('synthesis-nav-badge');
     if (badge) {
       badge.textContent = 'Locked';
       badge.classList.remove('sidebar-link-badge--unlocked');
     }
 
-    // Clear assessment inputs & feedback
     [0, 1, 2, 3].forEach(idx => {
       const input = document.getElementById(`assessment-input-${idx}`);
       if (input) input.value = '';
@@ -106,11 +103,10 @@
         feedback.innerHTML = '';
         feedback.hidden = true;
       }
-      const badge = document.getElementById(`mastery-badge-${idx}`);
-      if (badge) badge.hidden = true;
+      const b = document.getElementById(`mastery-badge-${idx}`);
+      if (b) b.hidden = true;
     });
 
-    // Reset user info display
     const sbName = document.getElementById('sidebar-user-name');
     const sbAvatar = document.getElementById('user-avatar-initials');
     const synthName = document.getElementById('synth-user-name');
@@ -120,17 +116,14 @@
     if (synthName) synthName.textContent = '';
     if (synthAvatar) synthAvatar.textContent = '';
 
-    // Clear chat history in DOM
     const chatContainer = document.getElementById('chat-messages-container');
     if (chatContainer) chatContainer.innerHTML = '';
 
-    // Clear auth form fields
     ['login-email', 'login-password', 'signup-name', 'signup-email', 'signup-password'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
 
-    // Hide tutor chat drawer on logout
     const chatDrawer = document.getElementById('tutor-chat-drawer');
     if (chatDrawer) {
       chatDrawer.classList.remove('tutor-chat-drawer--open');
@@ -172,19 +165,18 @@
     }
   }
 
-  /* ── Logout (both sidebars) ──────────────────────────────── */
+  /* ── Logout ──────────────────────────────────────────────── */
   async function handleLogout() {
-    try {
-      if (window.SupabaseService) {
-        await window.SupabaseService.signOut();
-      }
-    } catch (err) {
-      console.warn('[App] Sign out error:', err);
-    }
-    State.logout();
     _resetDashboardDOM();
-    // Clean reload to ensure 100% fresh state with zero in-memory variables or cached DOM states
-    window.location.replace(window.location.origin + window.location.pathname);
+    if (window.Router && typeof Router.signOut === 'function') {
+      await Router.signOut();
+    } else {
+      if (typeof PathStore !== 'undefined') {
+        PathStore.clearAll();
+      }
+      State.logout();
+      window.location.hash = '#/login';
+    }
   }
 
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
@@ -194,134 +186,270 @@
   document.getElementById('btn-back-to-dashboard')?.addEventListener('click', () => show('dashboard'));
   document.getElementById('nav-home-synthesis')?.addEventListener('click',    () => show('dashboard'));
 
-  /* ── Initial routing via Supabase session (No race condition) ── */
-  let _initialBootDone = false;
+  /* ── Change-level Modal & Direct Switcher ────────────────── */
+  const modalChangeLevel = document.getElementById('modal-change-level');
+  const btnCloseModal = document.getElementById('btn-close-modal-change-level');
+  const btnCancelModal = document.getElementById('btn-cancel-modal-change-level');
+  const btnRetakeOnboarding = document.getElementById('btn-retake-onboarding');
 
+  function openChangeLevelModal() {
+    if (modalChangeLevel) {
+      modalChangeLevel.hidden = false;
+      modalChangeLevel.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function closeChangeLevelModal() {
+    if (modalChangeLevel) {
+      modalChangeLevel.hidden = true;
+      modalChangeLevel.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  // Open modal triggers: buttons and sidebar level badges
+  document.querySelectorAll('.btn-change-level').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChangeLevelModal();
+    });
+  });
+
+  document.querySelectorAll('.ob-sidebar-level-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChangeLevelModal();
+    });
+  });
+
+  btnCloseModal?.addEventListener('click', closeChangeLevelModal);
+  btnCancelModal?.addEventListener('click', closeChangeLevelModal);
+  modalChangeLevel?.addEventListener('click', (e) => {
+    if (e.target === modalChangeLevel) closeChangeLevelModal();
+  });
+
+  function switchLevel(targetLevel) {
+    if (!targetLevel) return;
+    closeChangeLevelModal();
+
+    // Reset path data and switch profile to targetLevel
+    if (typeof PathStore !== 'undefined') {
+      PathStore.clearRoadmapProgress(targetLevel);
+    }
+    if (typeof State !== 'undefined') {
+      State.resetPathState();
+      State.setProfile({
+        level: targetLevel,
+        selfReportedLevel: targetLevel,
+        placement: null,
+        createdAt: Date.now(),
+      });
+    }
+
+    // Sync level badges
+    const labelMap = { beginner: 'Beginner', intermediate: 'Intermediate', revision: 'Revision' };
+    const badgeText = labelMap[targetLevel] || targetLevel;
+    document.querySelectorAll('.ob-sidebar-level-badge').forEach(el => {
+      el.textContent = badgeText;
+    });
+
+    // Re-init roadmap with forceFresh=true
+    if (window.Roadmap) {
+      Roadmap.init(true);
+    }
+
+    if (window.Router) {
+      Router.go('/ready');
+    } else {
+      show('dashboard');
+    }
+    if (typeof showToast === 'function') {
+      showToast(`Switched learning path to ${badgeText} level!`, 'success');
+    }
+  }
+
+  // Action 1: Directly switch level from modal
+  document.getElementById('btn-quick-beginner')?.addEventListener('click', () => switchLevel('beginner'));
+  document.getElementById('btn-quick-intermediate')?.addEventListener('click', () => switchLevel('intermediate'));
+  document.getElementById('btn-quick-revision')?.addEventListener('click', () => switchLevel('revision'));
+  document.querySelectorAll('.cdd-level-quick-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const targetLevel = btn.dataset.level || e.currentTarget?.dataset?.level;
+      if (targetLevel) switchLevel(targetLevel);
+    });
+  });
+
+  // Action 2: Retake full placement onboarding
+  btnRetakeOnboarding?.addEventListener('click', () => {
+    closeChangeLevelModal();
+
+    if (typeof PathStore !== 'undefined' && typeof PathStore.clear === 'function') {
+      PathStore.clear();
+    }
+    if (typeof State !== 'undefined') {
+      if (typeof State.resetPathState === 'function') State.resetPathState();
+      if (typeof State.setProfile === 'function') State.setProfile(null);
+    }
+    if (window.Roadmap && typeof Roadmap.reset === 'function') {
+      Roadmap.reset();
+    }
+
+    if (window.Router) {
+      Router.go('/level');
+    } else {
+      show('onboarding');
+      if (window.Onboarding) {
+        window.Onboarding.show();
+      }
+    }
+  });
+
+  /* ── Initial boot — restore session if previously logged in ── */
   async function initSession() {
-    // 1. Check for error params in URL hash or query (e.g. expired magic link)
-    const rawHash = window.location.hash ? window.location.hash.substring(1) : '';
-    const rawSearch = window.location.search ? window.location.search.substring(1) : '';
-    const hashParams = new URLSearchParams(rawHash);
-    const searchParams = new URLSearchParams(rawSearch);
+    let currentUser = null;
 
-    const errorCode = hashParams.get('error_code') || searchParams.get('error_code');
-    const errorDesc = hashParams.get('error_description') || searchParams.get('error_description') || hashParams.get('error');
-
-    if (errorCode || errorDesc) {
-      console.warn('[App] Auth redirect error detected:', { errorCode, errorDesc });
-      window.history.replaceState(null, '', window.location.pathname);
-      show('auth');
-      _initialBootDone = true;
-      hideAppLoader();
-
-      if (errorCode === 'otp_expired' || (errorDesc && errorDesc.toLowerCase().includes('expired'))) {
-        window.Auth?.showAlert?.('This link has expired or has already been used. Please request a new one below.', 'warning');
-      } else {
-        const decoded = errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : 'Authentication link is invalid or expired.';
-        window.Auth?.showAlert?.(decoded, 'danger');
-      }
-      return;
-    }
-
-    // 2. Check for password recovery flow in URL hash or global flag
-    const isRecovery = window.location.hash.includes('type=recovery') || window._isPasswordRecovery;
-    if (isRecovery) {
-      console.log('[App] Password recovery mode detected from redirect');
-      window._isPasswordRecovery = true;
-      window.history.replaceState(null, '', window.location.pathname);
-      show('auth');
-      window.Auth?.showView?.('new-password');
-      _initialBootDone = true;
-      hideAppLoader();
-      return;
-    }
-
-    // 3. Regular session restoration (e.g. email confirmation redirect or existing login)
-    try {
-      if (window.SupabaseService) {
-        const session = await window.SupabaseService.getSession();
-        if (session?.user) {
-          // Double check if recovery flag was set during session parsing
-          if (window._isPasswordRecovery) {
-            show('auth');
-            window.Auth?.showView?.('new-password');
-            _initialBootDone = true;
-            hideAppLoader();
-            return;
-          }
-
-          console.log('[App] Active session restored for:', session.user.email);
-          if (window.location.hash.includes('access_token')) {
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-          await State.initFromSupabase(session.user, session);
-          show('dashboard');
-          _initialBootDone = true;
-          hideAppLoader();
-          return;
+    // Check Supabase session across page refreshes
+    const client = window.supabaseClient || (typeof getSupabaseClient === 'function' ? getSupabaseClient() : null);
+    if (client && client.auth) {
+      try {
+        const { data: { session }, error } = await client.auth.getSession();
+        if (session && session.user) {
+          currentUser = {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Learner',
+            user_metadata: session.user.user_metadata
+          };
         }
+      } catch (err) {
+        console.warn('[App] Error getting Supabase session:', err);
       }
-    } catch (err) {
-      console.error('[App] Error restoring session on boot:', err);
     }
 
-    // No valid session found
-    show('auth');
-    _initialBootDone = true;
+    // Fallback: check PathStore session user if client is mocked or offline
+    if (!currentUser && typeof PathStore !== 'undefined') {
+      const localUser = PathStore.getSessionUser();
+      if (localUser && localUser.id) {
+        currentUser = localUser;
+      }
+    }
+
+    if (currentUser) {
+      await State.initFromSupabase(currentUser);
+      if (typeof PathStore !== 'undefined') {
+        PathStore.setSessionUser(currentUser);
+      }
+      if (typeof CloudStore !== 'undefined' && CloudStore.onLogin) {
+        await CloudStore.onLogin(currentUser);
+      }
+      if (typeof Roadmap !== 'undefined') {
+        Roadmap.init();
+      }
+    } else {
+      State.logout();
+      if (typeof PathStore !== 'undefined') {
+        PathStore.clearSessionUser();
+      }
+    }
+
+    // Subscribe to Supabase auth events
+    if (client && client.auth && client.auth.onAuthStateChange) {
+      client.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const u = {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Learner',
+            user_metadata: session.user.user_metadata
+          };
+          await State.initFromSupabase(u);
+          if (typeof PathStore !== 'undefined') {
+            PathStore.setSessionUser(u);
+          }
+          if (typeof CloudStore !== 'undefined' && CloudStore.onLogin) {
+            await CloudStore.onLogin(u);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          _resetDashboardDOM();
+          State.logout();
+          if (typeof PathStore !== 'undefined') {
+            PathStore.clearAll();
+          }
+          if (window.Router) {
+            Router.go('/login');
+          }
+        } else if (event === 'PASSWORD_RECOVERY') {
+          if (window.Router) {
+            Router.go('/reset');
+          }
+        }
+      });
+    }
+
+    if (window.Router && typeof Router.init === 'function') {
+      Router.init();
+    } else {
+      if (currentUser) {
+        if (State.getProfile()) {
+          show('dashboard');
+        } else {
+          show('onboarding');
+          if (window.Onboarding) {
+            window.Onboarding.show();
+          }
+        }
+      } else {
+        show('auth');
+      }
+    }
     hideAppLoader();
   }
 
   initSession();
 
-  // Listen for auth events (cross-tab, password recovery, login/logout)
-  if (window.SupabaseService) {
-    window.SupabaseService.onAuthStateChange(async (event, session) => {
-      console.log('[App] Supabase auth event received:', event);
-
-      // Password recovery must be intercepted immediately, even before initial boot resolves
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('[App] PASSWORD_RECOVERY event received -> opening Create New Password screen');
-        window._isPasswordRecovery = true;
-        show('auth');
-        window.Auth?.showView?.('new-password');
-        hideAppLoader();
-        return;
-      }
-
-      // Ignore standard background sync until initial boot has determined current state
-      if (!_initialBootDone) return;
-
-      if (event === 'SIGNED_OUT') {
-        State.logout();
-        _resetDashboardDOM();
-        window.location.replace(window.location.origin + window.location.pathname);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        // Suppress auto-navigation to dashboard if user is currently resetting password
-        if (window._isPasswordRecovery) {
-          console.log('[App] SIGNED_IN suppressed due to recovery mode in progress.');
-          return;
-        }
-
-        const currentUser = State.get().currentUser;
-        if (!currentUser || currentUser.id !== session.user.id) {
-          console.log('[App] Auth state changed to SIGNED_IN for:', session.user.email);
-          await State.initFromSupabase(session.user, session);
-          show('dashboard');
-        }
-      }
-    });
-  }
-
   /* ── Expose globally ─────────────────────────────────────── */
   window.App = {
-    showAuth:      (subView) => {
-      show('auth');
+    showAuth:       (subView) => {
+      const subMap = {
+        login: '/login',
+        signup: '/signup',
+        'forgot-password': '/forgot',
+        'new-password': '/reset',
+      };
+      const target = (subView && subMap[subView]) || '/login';
+      if (window.Router) {
+        Router.go(target);
+      } else {
+        show('auth');
+      }
       if (subView && window.Auth?.showView) {
         window.Auth.showView(subView);
       }
     },
-    showDashboard: () => show('dashboard'),
-    showSynthesis: () => show('synthesis'),
+    showOnboarding: () => {
+      if (window.Router) {
+        Router.go('/level');
+      } else {
+        show('onboarding');
+        if (window.Onboarding) {
+          window.Onboarding.show();
+        }
+      }
+    },
+    showDashboard:  () => {
+      if (window.Router) {
+        const curr = (typeof Roadmap !== 'undefined' && Roadmap.getCurrentStep) ? Roadmap.getCurrentStep() : null;
+        Router.go(curr ? ('/step/' + curr.id) : '/ready');
+      } else {
+        show('dashboard');
+      }
+    },
+    showSynthesis:  () => {
+      if (window.Router) {
+        Router.go('/summary');
+      } else {
+        show('synthesis');
+      }
+    },
   };
 
 })();
